@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -177,9 +177,9 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 18p
   <div class="header-inner">
     <div class="theme-toggle">
       <span class="theme-icon">&#9790;</span>
-      <label class="theme-switch"><input type="checkbox" id="themeToggle" onchange="toggleTheme()"><span class="slider"></span></label>
+      <label class="theme-switch"><input type="checkbox" id="themeToggle" onchange="toggleTheme()" checked><span class="slider"></span></label>
       <span class="theme-icon">&#9788;</span>
-      <span class="theme-toggle-label" id="themeLabel">Light</span>
+      <span class="theme-toggle-label" id="themeLabel">Dark</span>
     </div>
     <h1>Thyroid <span>Burden</span> Calculator</h1>
     <p class="header-sub">Hypothyroidism, hyperthyroidism & thyroid cancer: economic, health & workforce impact modeling across 8 countries</p>
@@ -609,9 +609,9 @@ function recalc() {
 function destroyChart(key) { if (charts[key]) { charts[key].destroy(); charts[key] = null; } }
 let chartDefaults = {
   responsive: true, maintainAspectRatio: false,
-  plugins: { legend: { labels: { color: '#8899b0', font: { family: "'DM Sans'" }, boxWidth: 12, padding: 12 } } },
-  scales: { x: { ticks: { color: '#5a6d85', font: { family: "'DM Sans'", size: 11 } }, grid: { color: 'rgba(42,58,82,0.4)' } },
-            y: { ticks: { color: '#5a6d85', font: { family: "'DM Sans'", size: 11 } }, grid: { color: 'rgba(42,58,82,0.4)' } } }
+  plugins: { legend: { labels: { color: '#475569', font: { family: "'DM Sans'" }, boxWidth: 12, padding: 12 } } },
+  scales: { x: { ticks: { color: '#64748b', font: { family: "'DM Sans'", size: 11 } }, grid: { color: 'rgba(148,163,184,0.25)' } },
+            y: { ticks: { color: '#64748b', font: { family: "'DM Sans'", size: 11 } }, grid: { color: 'rgba(148,163,184,0.25)' } } }
 };
 
 function updateAllCharts(segments, hypoDirect, hyperDirect, cancerCost, totalIndirect, levoTotal, surgeryCost, c, totalDalys, absentCost, presentCost, particCost, hypoPop, hyperPop) {
@@ -621,7 +621,7 @@ function updateAllCharts(segments, hypoDirect, hyperDirect, cancerCost, totalInd
     type: 'doughnut',
     data: { labels: segments.map(s => s.label), datasets: [{ data: segments.map(s => s.val), backgroundColor: segments.map(s => s.color), borderWidth: 0 }] },
     options: { responsive: true, maintainAspectRatio: false, cutout: '65%',
-      plugins: { legend: { position: 'right', labels: { color: '#8899b0', font: { family: "'DM Sans'", size: 11 }, boxWidth: 10, padding: 8 } } } }
+      plugins: { legend: { position: 'right', labels: { color: '#475569', font: { family: "'DM Sans'", size: 11 }, boxWidth: 10, padding: 8 } } } }
   });
 
   // Economic
@@ -635,7 +635,7 @@ function updateAllCharts(segments, hypoDirect, hyperDirect, cancerCost, totalInd
     data: { labels: ['Hypothyroidism', 'Hyperthyroidism', 'Cancer', 'Indirect'],
       datasets: [{ data: [hypoDirect + levoTotal, hyperDirect + surgeryCost, cancerCost, totalIndirect], backgroundColor: ['#22d3ee', '#818cf8', '#f87171', '#fb923c'], borderWidth: 0 }] },
     options: { responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { position: 'bottom', labels: { color: '#8899b0', font: { family: "'DM Sans'" }, boxWidth: 10, padding: 12 } } } }
+      plugins: { legend: { position: 'bottom', labels: { color: '#475569', font: { family: "'DM Sans'" }, boxWidth: 10, padding: 12 } } } }
   });
 
   const hypoCostPP = parseFloat(document.getElementById('hypoCost').value);
@@ -652,7 +652,7 @@ function updateAllCharts(segments, hypoDirect, hyperDirect, cancerCost, totalInd
   charts.treatment = new Chart(document.getElementById('treatmentChart'), {
     type: 'bar', data: { labels: treatments.map(t => t.name), datasets: [{ data: treatments.map(t => t.val), backgroundColor: treatments.map(t => t.color), borderWidth: 0, borderRadius: 6 }] },
     options: { ...chartDefaults, plugins: { ...chartDefaults.plugins, legend: { display: false } },
-      scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, title: { display: true, text: 'Cost (USD)', color: '#5a6d85' } } } }
+      scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, title: { display: true, text: 'Cost (USD)', color: '#64748b' } } } }
   });
 
   // Procedure comparison
@@ -668,7 +668,7 @@ function updateAllCharts(segments, hypoDirect, hyperDirect, cancerCost, totalInd
   charts.procedure = new Chart(document.getElementById('procedureChart'), {
     type: 'bar', data: { labels: procedures.map(p => p.name), datasets: [{ data: procedures.map(p => p.val), backgroundColor: procedures.map(p => p.color), borderWidth: 0, borderRadius: 6 }] },
     options: { ...chartDefaults, plugins: { ...chartDefaults.plugins, legend: { display: false } },
-      scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, title: { display: true, text: 'Cost (USD)', color: '#5a6d85' } } } }
+      scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, title: { display: true, text: 'Cost (USD)', color: '#64748b' } } } }
   });
 
   // Workforce
@@ -677,7 +677,7 @@ function updateAllCharts(segments, hypoDirect, hyperDirect, cancerCost, totalInd
     type: 'bar', data: { labels: ['Absenteeism', 'Presenteeism', 'Reduced\nParticipation'],
       datasets: [{ data: [absentCost, presentCost, particCost], backgroundColor: ['#fbbf24', '#fb923c', '#f87171'], borderWidth: 0, borderRadius: 6 }] },
     options: { ...chartDefaults, plugins: { ...chartDefaults.plugins, legend: { display: false } },
-      scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, title: { display: true, text: 'Annual cost (USD)', color: '#5a6d85' } } } }
+      scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, title: { display: true, text: 'Annual cost (USD)', color: '#64748b' } } } }
   });
 
   // DALY doughnut
@@ -687,7 +687,7 @@ function updateAllCharts(segments, hypoDirect, hyperDirect, cancerCost, totalInd
     data: { labels: ['Hypothyroidism (YLD)', 'Hyperthyroidism (YLD)', 'Thyroid Cancer (YLL)', 'Thyroid Cancer (YLD)'],
       datasets: [{ data: [totalDalys * 0.2, totalDalys * 0.35, totalDalys * 0.3, totalDalys * 0.15], backgroundColor: ['#22d3ee', '#818cf8', '#f87171', '#f472b6'], borderWidth: 0 }] },
     options: { responsive: true, maintainAspectRatio: false, cutout: '60%',
-      plugins: { legend: { position: 'bottom', labels: { color: '#8899b0', font: { family: "'DM Sans'" }, boxWidth: 10 } } } }
+      plugins: { legend: { position: 'bottom', labels: { color: '#475569', font: { family: "'DM Sans'" }, boxWidth: 10 } } } }
   });
 }
 
@@ -741,9 +741,9 @@ function recalcProjections() {
   }
 
   destroyChart('projection');
-  charts.projection = new Chart(document.getElementById('projectionChart'), { type: 'line', data: { labels: years, datasets }, options: { ...chartDefaults, scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, title: { display: true, text: 'Thyroid disorder population (M)', color: '#5a6d85' } } } } });
+  charts.projection = new Chart(document.getElementById('projectionChart'), { type: 'line', data: { labels: years, datasets }, options: { ...chartDefaults, scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, title: { display: true, text: 'Thyroid disorder population (M)', color: '#64748b' } } } } });
   destroyChart('costProjection');
-  charts.costProjection = new Chart(document.getElementById('costProjectionChart'), { type: 'line', data: { labels: years, datasets: costDatasets }, options: { ...chartDefaults, scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, title: { display: true, text: 'Direct cost (USD billions)', color: '#5a6d85' } } } } });
+  charts.costProjection = new Chart(document.getElementById('costProjectionChart'), { type: 'line', data: { labels: years, datasets: costDatasets }, options: { ...chartDefaults, scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, title: { display: true, text: 'Direct cost (USD billions)', color: '#64748b' } } } } });
 }
 
 function updateCountryTab() {
@@ -760,10 +760,10 @@ function updateCountryTab() {
       { label: 'Hypo Cost/Pt (USD)', data: entries.map(([_, c]) => c.hypoCost), backgroundColor: '#fbbf2480', borderColor: '#fbbf24', type: 'line', borderWidth: 2, pointRadius: 4, yAxisID: 'y1' },
     ]},
     options: { responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { labels: { color: '#8899b0', font: { family: "'DM Sans'" }, boxWidth: 10 } } },
+      plugins: { legend: { labels: { color: '#475569', font: { family: "'DM Sans'" }, boxWidth: 10 } } },
       scales: {
-        x: { ticks: { color: '#5a6d85', font: { family: "'DM Sans'", size: 10 }, maxRotation: 45 }, grid: { color: 'rgba(42,58,82,0.3)' } },
-        y: { position: 'left', ticks: { color: '#22d3ee', font: { family: "'DM Sans'", size: 11 } }, grid: { color: 'rgba(42,58,82,0.3)' }, title: { display: true, text: 'Hypothyroidism prev (%)', color: '#22d3ee' } },
+        x: { ticks: { color: '#64748b', font: { family: "'DM Sans'", size: 10 }, maxRotation: 45 }, grid: { color: 'rgba(148,163,184,0.2)' } },
+        y: { position: 'left', ticks: { color: '#22d3ee', font: { family: "'DM Sans'", size: 11 } }, grid: { color: 'rgba(148,163,184,0.2)' }, title: { display: true, text: 'Hypothyroidism prev (%)', color: '#22d3ee' } },
         y1: { position: 'right', ticks: { color: '#fbbf24', font: { family: "'DM Sans'", size: 11 } }, grid: { display: false }, title: { display: true, text: 'Cost/Patient (USD)', color: '#fbbf24' } }
       }
     }

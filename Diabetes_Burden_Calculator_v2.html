@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -207,9 +207,9 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 18p
   <div class="header-inner">
     <div class="theme-toggle">
       <span class="theme-icon">&#9790;</span>
-      <label class="theme-switch"><input type="checkbox" id="themeToggle" onchange="toggleTheme()"><span class="slider"></span></label>
+      <label class="theme-switch"><input type="checkbox" id="themeToggle" onchange="toggleTheme()" checked><span class="slider"></span></label>
       <span class="theme-icon">&#9788;</span>
-      <span class="theme-toggle-label" id="themeLabel">Light</span>
+      <span class="theme-toggle-label" id="themeLabel">Dark</span>
     </div>
     <h1>Diabetes <span>Burden</span> Calculator</h1>
     <p class="header-sub">Advanced economic, health & workforce impact modeling across 20 countries with scenario projections</p>
@@ -971,9 +971,9 @@ function destroyChart(key) { if (charts[key]) { charts[key].destroy(); charts[ke
 
 let chartDefaults = {
   responsive: true, maintainAspectRatio: false,
-  plugins: { legend: { labels: { color: '#8899b0', font: { family: "'DM Sans'" }, boxWidth: 12, padding: 12 } } },
-  scales: { x: { ticks: { color: '#5a6d85', font: { family: "'DM Sans'", size: 11 } }, grid: { color: 'rgba(42,58,82,0.4)' } },
-            y: { ticks: { color: '#5a6d85', font: { family: "'DM Sans'", size: 11 } }, grid: { color: 'rgba(42,58,82,0.4)' } } }
+  plugins: { legend: { labels: { color: '#475569', font: { family: "'DM Sans'" }, boxWidth: 12, padding: 12 } } },
+  scales: { x: { ticks: { color: '#64748b', font: { family: "'DM Sans'", size: 11 } }, grid: { color: 'rgba(148,163,184,0.25)' } },
+            y: { ticks: { color: '#64748b', font: { family: "'DM Sans'", size: 11 } }, grid: { color: 'rgba(148,163,184,0.25)' } } }
 };
 
 function updateCostBreakdownChart(segments) {
@@ -985,7 +985,7 @@ function updateCostBreakdownChart(segments) {
       datasets: [{ data: segments.map(s => s.val), backgroundColor: segments.map(s => s.color), borderWidth: 0 }]
     },
     options: { responsive: true, maintainAspectRatio: false, cutout: '65%',
-      plugins: { legend: { position: 'right', labels: { color: '#8899b0', font: { family: "'DM Sans'", size: 11 }, boxWidth: 10, padding: 8 } } } }
+      plugins: { legend: { position: 'right', labels: { color: '#475569', font: { family: "'DM Sans'", size: 11 }, boxWidth: 10, padding: 8 } } } }
   });
 }
 
@@ -999,7 +999,7 @@ function updateEconCharts(segments, directTotal, indirectTotal, caregiverCost, c
       datasets: [{ data: [directTotal, indirectTotal, caregiverCost], backgroundColor: ['#38bdf8', '#fbbf24', '#f472b6'], borderWidth: 0 }]
     },
     options: { responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { position: 'bottom', labels: { color: '#8899b0', font: { family: "'DM Sans'" }, boxWidth: 10, padding: 12 } } } }
+      plugins: { legend: { position: 'bottom', labels: { color: '#475569', font: { family: "'DM Sans'" }, boxWidth: 10, padding: 12 } } } }
   });
 
   // Payer chart
@@ -1014,7 +1014,7 @@ function updateEconCharts(segments, directTotal, indirectTotal, caregiverCost, c
       datasets: [{ data: [oop, Math.max(0, 100-oop-15), 15], backgroundColor: ['#f87171', '#38bdf8', '#34d399'], borderWidth: 0, borderRadius: 6 }]
     },
     options: { ...chartDefaults, indexAxis: 'y', plugins: { ...chartDefaults.plugins, legend: { display: false } },
-      scales: { x: { ...chartDefaults.scales.x, max: 100, title: { display: true, text: '% of direct costs', color: '#5a6d85' } },
+      scales: { x: { ...chartDefaults.scales.x, max: 100, title: { display: true, text: '% of direct costs', color: '#64748b' } },
                 y: { ...chartDefaults.scales.y } } }
   });
 
@@ -1037,7 +1037,7 @@ function updateEconCharts(segments, directTotal, indirectTotal, caregiverCost, c
       datasets: [{ data: complications.map(c => c.val), backgroundColor: complications.map(c => c.color), borderWidth: 0, borderRadius: 6 }]
     },
     options: { ...chartDefaults, plugins: { ...chartDefaults.plugins, legend: { display: false } },
-      scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, title: { display: true, text: 'Annual cost per patient (USD)', color: '#5a6d85' } } } }
+      scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, title: { display: true, text: 'Annual cost per patient (USD)', color: '#64748b' } } } }
   });
 }
 
@@ -1050,7 +1050,7 @@ function updateWorkforceCharts(absent, present, partic, caregiver, dalys, diabet
       datasets: [{ data: [absent, present, partic, caregiver], backgroundColor: ['#fbbf24', '#fb923c', '#f87171', '#f472b6'], borderWidth: 0, borderRadius: 6 }]
     },
     options: { ...chartDefaults, plugins: { ...chartDefaults.plugins, legend: { display: false } },
-      scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, title: { display: true, text: 'Annual cost (USD)', color: '#5a6d85' } } } }
+      scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, title: { display: true, text: 'Annual cost (USD)', color: '#64748b' } } } }
   });
 
   // DALY components
@@ -1066,7 +1066,7 @@ function updateWorkforceCharts(absent, present, partic, caregiver, dalys, diabet
       datasets: [{ data: [yll, yldUncomp, yldComp], backgroundColor: ['#f87171', '#38bdf8', '#818cf8'], borderWidth: 0 }]
     },
     options: { responsive: true, maintainAspectRatio: false, cutout: '60%',
-      plugins: { legend: { position: 'bottom', labels: { color: '#8899b0', font: { family: "'DM Sans'" }, boxWidth: 10 } } } }
+      plugins: { legend: { position: 'bottom', labels: { color: '#475569', font: { family: "'DM Sans'" }, boxWidth: 10 } } } }
   });
 }
 
@@ -1143,14 +1143,14 @@ function recalcProjections() {
   charts.projection = new Chart(document.getElementById('projectionChart'), {
     type: 'line', data: { labels: years, datasets },
     options: { ...chartDefaults, plugins: { ...chartDefaults.plugins },
-      scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, title: { display: true, text: 'Diabetic population (millions)', color: '#5a6d85' } } } }
+      scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, title: { display: true, text: 'Diabetic population (millions)', color: '#64748b' } } } }
   });
 
   destroyChart('costProjection');
   charts.costProjection = new Chart(document.getElementById('costProjectionChart'), {
     type: 'line', data: { labels: years, datasets: costDatasets },
     options: { ...chartDefaults, plugins: { ...chartDefaults.plugins },
-      scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, title: { display: true, text: 'Direct cost (USD billions)', color: '#5a6d85' } } } }
+      scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, title: { display: true, text: 'Direct cost (USD billions)', color: '#64748b' } } } }
   });
 }
 
@@ -1188,10 +1188,10 @@ function updateCountryTab() {
       ]
     },
     options: { responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { labels: { color: '#8899b0', font: { family: "'DM Sans'" }, boxWidth: 10 } } },
+      plugins: { legend: { labels: { color: '#475569', font: { family: "'DM Sans'" }, boxWidth: 10 } } },
       scales: {
-        x: { ticks: { color: '#5a6d85', font: { family: "'DM Sans'", size: 10 }, maxRotation: 45 }, grid: { color: 'rgba(42,58,82,0.3)' } },
-        y: { position: 'left', ticks: { color: '#38bdf8', font: { family: "'DM Sans'", size: 11 } }, grid: { color: 'rgba(42,58,82,0.3)' }, title: { display: true, text: 'Diabetic population (M)', color: '#38bdf8' } },
+        x: { ticks: { color: '#64748b', font: { family: "'DM Sans'", size: 10 }, maxRotation: 45 }, grid: { color: 'rgba(148,163,184,0.2)' } },
+        y: { position: 'left', ticks: { color: '#38bdf8', font: { family: "'DM Sans'", size: 11 } }, grid: { color: 'rgba(148,163,184,0.2)' }, title: { display: true, text: 'Diabetic population (M)', color: '#38bdf8' } },
         y1: { position: 'right', ticks: { color: '#fbbf24', font: { family: "'DM Sans'", size: 11 } }, grid: { display: false }, title: { display: true, text: 'Cost per patient (USD)', color: '#fbbf24' } }
       }
     }

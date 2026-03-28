@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -180,9 +180,9 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 18p
   <div class="header-inner">
     <div class="theme-toggle">
       <span class="theme-icon">&#9790;</span>
-      <label class="theme-switch"><input type="checkbox" id="themeToggle" onchange="toggleTheme()"><span class="slider"></span></label>
+      <label class="theme-switch"><input type="checkbox" id="themeToggle" onchange="toggleTheme()" checked><span class="slider"></span></label>
       <span class="theme-icon">&#9788;</span>
-      <span class="theme-toggle-label" id="themeLabel">Light</span>
+      <span class="theme-toggle-label" id="themeLabel">Dark</span>
     </div>
     <h1>Hypertension <span>Burden</span> Calculator</h1>
     <p class="header-sub">The silent killer: economic, cardiovascular & workforce impact modeling across 12 countries with awareness-treatment-control cascade</p>
@@ -640,9 +640,9 @@ function recalc() {
 function destroyChart(key) { if (charts[key]) { charts[key].destroy(); charts[key] = null; } }
 let chartDefaults = {
   responsive: true, maintainAspectRatio: false,
-  plugins: { legend: { labels: { color: '#8899b0', font: { family: "'DM Sans'" }, boxWidth: 12, padding: 12 } } },
-  scales: { x: { ticks: { color: '#5a6d85', font: { family: "'DM Sans'", size: 11 } }, grid: { color: 'rgba(42,58,82,0.4)' } },
-            y: { ticks: { color: '#5a6d85', font: { family: "'DM Sans'", size: 11 } }, grid: { color: 'rgba(42,58,82,0.4)' } } }
+  plugins: { legend: { labels: { color: '#475569', font: { family: "'DM Sans'" }, boxWidth: 12, padding: 12 } } },
+  scales: { x: { ticks: { color: '#64748b', font: { family: "'DM Sans'", size: 11 } }, grid: { color: 'rgba(148,163,184,0.25)' } },
+            y: { ticks: { color: '#64748b', font: { family: "'DM Sans'", size: 11 } }, grid: { color: 'rgba(148,163,184,0.25)' } } }
 };
 
 function updateCostBreakdownChart(segments) {
@@ -651,7 +651,7 @@ function updateCostBreakdownChart(segments) {
     type: 'doughnut',
     data: { labels: segments.map(s => s.label), datasets: [{ data: segments.map(s => s.val), backgroundColor: segments.map(s => s.color), borderWidth: 0 }] },
     options: { responsive: true, maintainAspectRatio: false, cutout: '65%',
-      plugins: { legend: { position: 'right', labels: { color: '#8899b0', font: { family: "'DM Sans'", size: 11 }, boxWidth: 10, padding: 8 } } } }
+      plugins: { legend: { position: 'right', labels: { color: '#475569', font: { family: "'DM Sans'", size: 11 }, boxWidth: 10, padding: 8 } } } }
   });
 }
 
@@ -662,7 +662,7 @@ function updateEconCharts(directTotal, indirectTotal, c, htnPop, awareness, trea
     data: { labels: ['Management & Medication', 'Complication Events', 'Indirect (Productivity)'],
       datasets: [{ data: [directTotal * 0.4, directTotal * 0.6, indirectTotal], backgroundColor: ['#f87171', '#fb923c', '#38bdf8'], borderWidth: 0 }] },
     options: { responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { position: 'bottom', labels: { color: '#8899b0', font: { family: "'DM Sans'" }, boxWidth: 10, padding: 12 } } } }
+      plugins: { legend: { position: 'bottom', labels: { color: '#475569', font: { family: "'DM Sans'" }, boxWidth: 10, padding: 12 } } } }
   });
 
   const comps = [
@@ -677,7 +677,7 @@ function updateEconCharts(directTotal, indirectTotal, c, htnPop, awareness, trea
     type: 'bar',
     data: { labels: comps.map(c => c.name), datasets: [{ data: comps.map(c => c.val), backgroundColor: comps.map(c => c.color), borderWidth: 0, borderRadius: 6 }] },
     options: { ...chartDefaults, plugins: { ...chartDefaults.plugins, legend: { display: false } },
-      scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, title: { display: true, text: 'Cost (USD)', color: '#5a6d85' } } } }
+      scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, title: { display: true, text: 'Cost (USD)', color: '#64748b' } } } }
   });
 
   // Cascade
@@ -693,7 +693,7 @@ function updateEconCharts(directTotal, indirectTotal, c, htnPop, awareness, trea
     data: { labels: ['Total HTN', 'Aware', 'Treated', 'Controlled'],
       datasets: [{ data: cascadeData, backgroundColor: ['#f87171', '#fb923c', '#fbbf24', '#34d399'], borderWidth: 0, borderRadius: 6 }] },
     options: { ...chartDefaults, plugins: { ...chartDefaults.plugins, legend: { display: false } },
-      scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, title: { display: true, text: 'Population (millions)', color: '#5a6d85' } } } }
+      scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, title: { display: true, text: 'Population (millions)', color: '#64748b' } } } }
   });
 }
 
@@ -704,7 +704,7 @@ function updateWorkforceCharts(absent, present, partic, dalys) {
     data: { labels: ['Absenteeism', 'Presenteeism', 'Reduced\nParticipation'],
       datasets: [{ data: [absent, present, partic], backgroundColor: ['#fbbf24', '#fb923c', '#f87171'], borderWidth: 0, borderRadius: 6 }] },
     options: { ...chartDefaults, plugins: { ...chartDefaults.plugins, legend: { display: false } },
-      scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, title: { display: true, text: 'Annual cost (USD)', color: '#5a6d85' } } } }
+      scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, title: { display: true, text: 'Annual cost (USD)', color: '#64748b' } } } }
   });
 
   const yll = dalys * 0.65, yldUnctrl = dalys * 0.25, yldCtrl = dalys * 0.10;
@@ -714,7 +714,7 @@ function updateWorkforceCharts(absent, present, partic, dalys) {
     data: { labels: ['YLL (Premature CV Death)', 'YLD (Uncontrolled HTN)', 'YLD (Controlled HTN)'],
       datasets: [{ data: [yll, yldUnctrl, yldCtrl], backgroundColor: ['#f87171', '#fb923c', '#34d399'], borderWidth: 0 }] },
     options: { responsive: true, maintainAspectRatio: false, cutout: '60%',
-      plugins: { legend: { position: 'bottom', labels: { color: '#8899b0', font: { family: "'DM Sans'" }, boxWidth: 10 } } } }
+      plugins: { legend: { position: 'bottom', labels: { color: '#475569', font: { family: "'DM Sans'" }, boxWidth: 10 } } } }
   });
 }
 
@@ -768,9 +768,9 @@ function recalcProjections() {
   }
 
   destroyChart('projection');
-  charts.projection = new Chart(document.getElementById('projectionChart'), { type: 'line', data: { labels: years, datasets }, options: { ...chartDefaults, scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, title: { display: true, text: 'HTN population (millions)', color: '#5a6d85' } } } } });
+  charts.projection = new Chart(document.getElementById('projectionChart'), { type: 'line', data: { labels: years, datasets }, options: { ...chartDefaults, scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, title: { display: true, text: 'HTN population (millions)', color: '#64748b' } } } } });
   destroyChart('costProjection');
-  charts.costProjection = new Chart(document.getElementById('costProjectionChart'), { type: 'line', data: { labels: years, datasets: costDatasets }, options: { ...chartDefaults, scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, title: { display: true, text: 'Direct cost (USD billions)', color: '#5a6d85' } } } } });
+  charts.costProjection = new Chart(document.getElementById('costProjectionChart'), { type: 'line', data: { labels: years, datasets: costDatasets }, options: { ...chartDefaults, scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, title: { display: true, text: 'Direct cost (USD billions)', color: '#64748b' } } } } });
 }
 
 function updateCountryTab() {
@@ -789,10 +789,10 @@ function updateCountryTab() {
       { label: 'Control Rate (%)', data: top12.map(([_, c]) => c.control), backgroundColor: '#34d39980', borderColor: '#34d399', type: 'line', borderWidth: 2, pointRadius: 4, yAxisID: 'y1' },
     ]},
     options: { responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { labels: { color: '#8899b0', font: { family: "'DM Sans'" }, boxWidth: 10 } } },
+      plugins: { legend: { labels: { color: '#475569', font: { family: "'DM Sans'" }, boxWidth: 10 } } },
       scales: {
-        x: { ticks: { color: '#5a6d85', font: { family: "'DM Sans'", size: 10 }, maxRotation: 45 }, grid: { color: 'rgba(42,58,82,0.3)' } },
-        y: { position: 'left', ticks: { color: '#f87171', font: { family: "'DM Sans'", size: 11 } }, grid: { color: 'rgba(42,58,82,0.3)' }, title: { display: true, text: 'HTN population (M)', color: '#f87171' } },
+        x: { ticks: { color: '#64748b', font: { family: "'DM Sans'", size: 10 }, maxRotation: 45 }, grid: { color: 'rgba(148,163,184,0.2)' } },
+        y: { position: 'left', ticks: { color: '#f87171', font: { family: "'DM Sans'", size: 11 } }, grid: { color: 'rgba(148,163,184,0.2)' }, title: { display: true, text: 'HTN population (M)', color: '#f87171' } },
         y1: { position: 'right', ticks: { color: '#34d399', font: { family: "'DM Sans'", size: 11 } }, grid: { display: false }, title: { display: true, text: 'Control rate (%)', color: '#34d399' }, max: 100 }
       }
     }

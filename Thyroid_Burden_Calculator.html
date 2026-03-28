@@ -169,9 +169,11 @@ input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 18p
 
 .methodology { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-top: 24px; font-size: 0.82rem; color: var(--text-dim); line-height: 1.7; }
 .methodology h4 { color: var(--text); margin-bottom: 8px; font-size: 0.9rem; }
+body.in-iframe .theme-toggle { display: none; }
 </style>
 </head>
 <body>
+<script>if (window !== window.parent) document.body.classList.add('in-iframe');</script>
 
 <header class="site-header">
   <div class="header-inner">

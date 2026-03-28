@@ -629,6 +629,24 @@ let currentDisease = null;
 function toggleTheme() {
   const isLight = document.getElementById('themeToggle').checked;
   document.documentElement.setAttribute('data-theme', isLight ? 'light' : '');
+  syncThemeToIframe();
+}
+
+function syncThemeToIframe() {
+  try {
+    const frame = document.getElementById('calcFrame');
+    if (frame && frame.contentDocument) {
+      const isLight = document.getElementById('themeToggle').checked;
+      frame.contentDocument.documentElement.setAttribute('data-theme', isLight ? 'light' : 'dark');
+      const iframeToggle = frame.contentDocument.getElementById('themeToggle');
+      if (iframeToggle) iframeToggle.checked = isLight;
+      const iframeLabel = frame.contentDocument.getElementById('themeLabel');
+      if (iframeLabel) iframeLabel.textContent = isLight ? 'Dark' : 'Light';
+      if (frame.contentWindow && typeof frame.contentWindow.updateChartColors === 'function') {
+        frame.contentWindow.updateChartColors(isLight);
+      }
+    }
+  } catch(e) {}
 }
 
 function loadCalculator(disease) {
@@ -662,11 +680,15 @@ function loadCalculator(disease) {
 
   // Load iframe
   const frame = document.getElementById('calcFrame');
-  frame.onload = () => {
-    setTimeout(() => {
-      overlay.classList.remove('active');
-    }, 400);
+  frame.src = '';
+  frame.onload = function onCalcLoad() {
+    if (!frame.src || frame.src === 'about:blank') return;
+    frame.onload = null;
+    syncThemeToIframe();
+    setTimeout(() => { overlay.classList.remove('active'); }, 300);
   };
+  // Timeout fallback — dismiss overlay even if onload never fires
+  setTimeout(() => { overlay.classList.remove('active'); }, 5000);
   frame.src = info.file;
 
   // Switch views

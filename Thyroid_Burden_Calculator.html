@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thyroid Disorders Global Burden Calculator & Visualizer</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,500;0,9..40,700;1,9..40,400&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0B1120;
+  --bg2: #111827;
+  --bg3: #1a2332;
+  --card: #162032;
+  --card-hover: #1d2b42;
+  --border: #2a3a52;
+  --border-light: #334466;
+  --text: #e2e8f0;
+  --text-dim: #8899b0;
+  --text-muted: #5a6d85;
+  --accent: #22d3ee;
+  --accent2: #34d399;
+  --accent3: #818cf8;
+  --warn: #fbbf24;
+  --danger: #f87171;
+  --pink: #f472b6;
+  --orange: #fb923c;
+  --blue: #38bdf8;
+  --purple: #818cf8;
+  --serif: 'Instrument Serif', Georgia, serif;
+  --sans: 'DM Sans', system-ui, sans-serif;
+  --radius: 12px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.3);
+}
+
+[data-theme="light"] {
+  --bg: #f0f4f8; --bg2: #e2e8f0; --bg3: #dde4ed; --card: #ffffff; --card-hover: #f8fafc;
+  --border: #cbd5e1; --border-light: #94a3b8; --text: #1e293b; --text-dim: #475569; --text-muted: #64748b;
+  --accent: #0891b2; --accent2: #059669; --accent3: #6366f1; --warn: #d97706; --danger: #dc2626;
+  --pink: #db2777; --orange: #ea580c; --blue: #0284c7; --purple: #6366f1;
+  --shadow: 0 4px 24px rgba(0,0,0,0.08);
+}
+[data-theme="light"] .site-header { background: linear-gradient(135deg, #0a3040 0%, #0c4a5e 50%, #0a3040 100%); }
+[data-theme="light"] .stat-value { color: var(--text); }
+[data-theme="light"] .card-title { color: var(--text); }
+[data-theme="light"] .section-header h2 { color: var(--text); }
+[data-theme="light"] .tab.active { background: var(--card); color: var(--text); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+[data-theme="light"] .data-table tr:hover td { background: rgba(8,145,178,0.04); }
+[data-theme="light"] .burden-bar div { color: #fff; }
+[data-theme="light"] input[type="range"] { background: var(--bg2); border-color: var(--border); }
+[data-theme="light"] input[type="range"]::-webkit-slider-thumb { border-color: #fff; box-shadow: 0 0 8px rgba(8,145,178,0.3); }
+[data-theme="light"] .methodology { background: #f1f5f9; }
+[data-theme="light"] .info-tip:hover::after { background: #fff; }
+[data-theme="light"] .input-group select option { background: #fff; }
+
+.theme-toggle { position: absolute; top: 50%; right: 32px; transform: translateY(-50%); z-index: 10; display: flex; align-items: center; gap: 10px; }
+.theme-toggle-label { font-size: 0.78rem; color: rgba(255,255,255,0.6); font-weight: 500; }
+.theme-switch { position: relative; width: 52px; height: 28px; cursor: pointer; }
+.theme-switch input { opacity: 0; width: 0; height: 0; }
+.theme-switch .slider { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.15); border-radius: 28px; transition: 0.3s; border: 1px solid rgba(255,255,255,0.2); }
+.theme-switch .slider::before { content: ''; position: absolute; height: 20px; width: 20px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: 0.3s; box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
+.theme-switch input:checked + .slider { background: rgba(255,255,255,0.3); }
+.theme-switch input:checked + .slider::before { transform: translateX(24px); }
+.theme-icon { font-size: 1.1rem; line-height: 1; }
+
+.guide-section { margin-bottom: 32px; }
+.guide-section h3 { font-family: var(--serif); font-size: 1.25rem; color: var(--accent); margin-bottom: 12px; font-weight: 400; }
+.guide-step { display: flex; gap: 16px; margin-bottom: 16px; padding: 16px; background: var(--bg2); border-radius: 10px; border: 1px solid var(--border); }
+.guide-step-num { flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%; background: var(--accent); color: #0B1120; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; }
+.guide-step-content { flex: 1; }
+.guide-step-content h4 { font-size: 0.95rem; color: var(--text); margin-bottom: 4px; font-weight: 600; }
+.guide-step-content p { font-size: 0.84rem; color: var(--text-dim); line-height: 1.6; }
+.guide-metric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+.guide-metric { padding: 12px 16px; background: var(--card); border: 1px solid var(--border); border-radius: 8px; }
+.guide-metric dt { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); font-weight: 500; }
+.guide-metric dd { font-size: 0.88rem; color: var(--text); margin-top: 2px; font-weight: 500; }
+@media (max-width: 768px) { .guide-metric-grid { grid-template-columns: 1fr; } .theme-toggle-label { display: none; } }
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+body { font-family: var(--sans); background: var(--bg); color: var(--text); line-height: 1.6; min-height: 100vh; }
+
+.site-header { background: linear-gradient(135deg, #041420 0%, #0a2a3a 50%, #041420 100%); border-bottom: 1px solid var(--border); padding: 32px 0; position: relative; overflow: hidden; }
+.site-header::before { content:''; position:absolute; top:-50%; left:-50%; width:200%; height:200%; background: radial-gradient(ellipse at 30% 50%, rgba(34,211,238,0.06) 0%, transparent 50%), radial-gradient(ellipse at 70% 50%, rgba(52,211,153,0.05) 0%, transparent 50%); pointer-events:none; }
+.header-inner { max-width: 1400px; margin: 0 auto; padding: 0 32px; position: relative; z-index:1; }
+.header-inner h1 { font-family: var(--serif); font-size: 2.8rem; font-weight: 400; letter-spacing: -0.02em; color: #fff; }
+.header-inner h1 span { color: var(--accent); }
+.header-sub { font-size: 1.05rem; color: var(--text-dim); margin-top: 8px; font-weight: 300; }
+.header-badges { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+.badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 14px; border-radius: 100px; font-size: 0.75rem; font-weight: 500; letter-spacing: 0.02em; border: 1px solid var(--border); background: rgba(255,255,255,0.03); color: var(--text-dim); }
+.badge .dot { width: 6px; height: 6px; border-radius: 50%; }
+
+.container { max-width: 1400px; margin: 0 auto; padding: 32px; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+
+.card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; transition: border-color 0.2s; }
+.card:hover { border-color: var(--border-light); }
+.card-title { font-family: var(--serif); font-size: 1.35rem; margin-bottom: 16px; color: #fff; display: flex; align-items: center; gap: 10px; }
+.card-title .icon { font-size: 1.1rem; }
+
+.stat-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; text-align: center; position: relative; overflow: hidden; }
+.stat-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; }
+.stat-card.blue::before { background: linear-gradient(90deg, var(--accent), var(--blue)); }
+.stat-card.green::before { background: linear-gradient(90deg, var(--accent2), #22d3ee); }
+.stat-card.amber::before { background: linear-gradient(90deg, var(--warn), var(--orange)); }
+.stat-card.red::before { background: linear-gradient(90deg, var(--danger), var(--pink)); }
+.stat-card.purple::before { background: linear-gradient(90deg, var(--purple), var(--pink)); }
+.stat-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 8px; font-weight: 500; }
+.stat-value { font-family: var(--serif); font-size: 2rem; color: #fff; font-weight: 400; }
+.stat-sub { font-size: 0.8rem; color: var(--text-dim); margin-top: 4px; }
+
+.input-group { margin-bottom: 16px; }
+.input-group label { display: block; font-size: 0.8rem; color: var(--text-dim); margin-bottom: 6px; font-weight: 500; letter-spacing: 0.02em; }
+.input-group input, .input-group select { width: 100%; padding: 10px 14px; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: var(--sans); font-size: 0.9rem; outline: none; transition: border-color 0.2s; }
+.input-group input:focus, .input-group select:focus { border-color: var(--accent); }
+.input-group select option { background: var(--bg2); }
+.input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.input-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+.slider-group { margin-bottom: 16px; }
+.slider-group label { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-dim); margin-bottom: 6px; font-weight: 500; }
+.slider-group label span { color: var(--accent); font-family: var(--sans); }
+input[type="range"] { -webkit-appearance: none; width: 100%; height: 6px; border-radius: 3px; background: var(--bg2); outline: none; border: 1px solid var(--border); }
+input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--accent); cursor: pointer; border: 2px solid var(--bg); box-shadow: 0 0 8px rgba(34,211,238,0.3); }
+
+.tabs { display: flex; gap: 4px; background: var(--bg2); border-radius: 10px; padding: 4px; margin-bottom: 24px; border: 1px solid var(--border); overflow-x: auto; }
+.tab { padding: 10px 20px; border-radius: 8px; font-size: 0.85rem; font-weight: 500; color: var(--text-dim); cursor: pointer; transition: all 0.2s; border: none; background: none; white-space: nowrap; font-family: var(--sans); }
+.tab:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+.tab.active { background: var(--card); color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+.tab-content { display: none; }
+.tab-content.active { display: block; animation: fadeIn 0.3s; }
+@keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+.scenario-bar { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+.scenario-pill { padding: 8px 18px; border-radius: 100px; font-size: 0.8rem; font-weight: 500; cursor: pointer; transition: all 0.2s; border: 1px solid var(--border); background: transparent; color: var(--text-dim); font-family: var(--sans); }
+.scenario-pill:hover { border-color: var(--text-dim); }
+.scenario-pill.active-opt { background: rgba(52,211,153,0.12); border-color: var(--accent2); color: var(--accent2); }
+.scenario-pill.active-base { background: rgba(34,211,238,0.12); border-color: var(--accent); color: var(--accent); }
+.scenario-pill.active-pess { background: rgba(251,191,36,0.12); border-color: var(--warn); color: var(--warn); }
+
+.chart-container { position: relative; width: 100%; height: 360px; }
+.chart-container-sm { position: relative; width: 100%; height: 280px; }
+
+.data-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+.data-table th { background: var(--bg2); color: var(--text-dim); font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.72rem; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); position: sticky; top:0; }
+.data-table td { padding: 10px 14px; border-bottom: 1px solid rgba(42,58,82,0.5); }
+.data-table tr:hover td { background: rgba(34,211,238,0.03); }
+.data-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.table-scroll { max-height: 500px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius); }
+
+.section-header { margin: 40px 0 24px; }
+.section-header h2 { font-family: var(--serif); font-size: 1.8rem; color: #fff; font-weight: 400; }
+.section-header p { color: var(--text-dim); font-size: 0.9rem; margin-top: 4px; }
+.divider { width: 48px; height: 3px; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 2px; margin-top: 12px; }
+
+.burden-bar { display: flex; height: 32px; border-radius: 8px; overflow: hidden; margin: 12px 0; }
+.burden-bar div { display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 600; color: #fff; transition: width 0.5s ease; min-width: 0; }
+.burden-legend { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 8px; }
+.burden-legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: var(--text-dim); }
+.burden-legend-item .swatch { width: 10px; height: 10px; border-radius: 3px; }
+
+@media (max-width: 1100px) { .grid-2 { grid-template-columns: 1fr; } .grid-3 { grid-template-columns: 1fr; } }
+@media (max-width: 768px) { .grid-4 { grid-template-columns: 1fr 1fr; } .header-inner h1 { font-size: 2rem; } .container { padding: 16px; } .input-row, .input-row-3 { grid-template-columns: 1fr; } }
+
+.info-tip { display: inline-block; width: 16px; height: 16px; border-radius: 50%; background: var(--border); color: var(--text-dim); font-size: 0.65rem; text-align: center; line-height: 16px; cursor: help; position: relative; font-weight: 700; margin-left: 4px; }
+.info-tip:hover::after { content: attr(data-tip); position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--bg2); border: 1px solid var(--border); color: var(--text); padding: 8px 12px; border-radius: 8px; font-size: 0.75rem; font-weight: 400; white-space: nowrap; z-index: 99; max-width: 280px; white-space: normal; box-shadow: var(--shadow); }
+
+.methodology { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-top: 24px; font-size: 0.82rem; color: var(--text-dim); line-height: 1.7; }
+.methodology h4 { color: var(--text); margin-bottom: 8px; font-size: 0.9rem; }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="theme-toggle">
+      <span class="theme-icon">&#9790;</span>
+      <label class="theme-switch"><input type="checkbox" id="themeToggle" onchange="toggleTheme()"><span class="slider"></span></label>
+      <span class="theme-icon">&#9788;</span>
+      <span class="theme-toggle-label" id="themeLabel">Light</span>
+    </div>
+    <h1>Thyroid <span>Burden</span> Calculator</h1>
+    <p class="header-sub">Hypothyroidism, hyperthyroidism & thyroid cancer: economic, health & workforce impact modeling across 8 countries</p>
+    <div class="header-badges">
+      <span class="badge"><span class="dot" style="background:var(--accent2)"></span> GBD 2021</span>
+      <span class="badge"><span class="dot" style="background:var(--accent)"></span> GLOBOCAN 2022</span>
+      <span class="badge"><span class="dot" style="background:var(--purple)"></span> TIDE Study (China)</span>
+      <span class="badge"><span class="dot" style="background:var(--warn)"></span> WHO Iodine Network</span>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('guide',this)">&#128214; Guide</button>
+    <button class="tab" onclick="switchTab('dashboard',this)">Dashboard</button>
+    <button class="tab" onclick="switchTab('projections',this)">Projections &amp; Scenarios</button>
+    <button class="tab" onclick="switchTab('economic',this)">Economic Burden</button>
+    <button class="tab" onclick="switchTab('workforce',this)">Workforce &amp; Societal</button>
+    <button class="tab" onclick="switchTab('country',this)">Country Comparison</button>
+    <button class="tab" onclick="switchTab('methodology',this)">Methodology</button>
+  </div>
+
+  <!-- GUIDE -->
+  <div class="tab-content active" id="tab-guide">
+    <div class="section-header"><h2>How to Use This Calculator</h2><p>Model the burden of thyroid disorders — from subclinical hypothyroidism to thyroid cancer</p><div class="divider"></div></div>
+    <div class="card">
+      <div class="card-title"><span class="icon">&#127919;</span> Who Is This For?</div>
+      <div class="methodology" style="margin-top:0">
+        <p>This tool serves <strong>endocrinologists, public health researchers, policy analysts, and pharmaceutical professionals</strong> who need to model the burden of thyroid disorders. Affecting 200+ million people worldwide with a striking 5-8x female predominance, thyroid diseases are among the most common endocrine disorders — yet their economic burden is often underestimated. This calculator covers hypothyroidism (overt and subclinical), hyperthyroidism, thyroid cancer, and iodine deficiency impacts.</p>
+      </div>
+    </div>
+    <div class="guide-section" style="margin-top:28px">
+      <h3>Quick Start</h3>
+      <div class="guide-step"><div class="guide-step-num">1</div><div class="guide-step-content"><h4>Select a Country</h4><p>Go to <strong>Dashboard</strong> and choose a country. Defaults load for hypothyroidism/hyperthyroidism prevalence, treatment costs, levothyroxine pricing, iodine status, and thyroid cancer incidence.</p></div></div>
+      <div class="guide-step"><div class="guide-step-num">2</div><div class="guide-step-content"><h4>Adjust Prevalence</h4><p>Thyroid prevalence varies enormously by iodine status, screening intensity, and demographics. China's TIDE study found 13.95% hypothyroidism (mostly subclinical at 12.93%).</p></div></div>
+      <div class="guide-step"><div class="guide-step-num">3</div><div class="guide-step-content"><h4>Explore the Impact</h4><p>See how thyroid disorders affect workforce productivity (30% of hyperthyroid patients are partially or fully work-disabled), and how thyroid cancer carries the highest bankruptcy risk among all cancer types.</p></div></div>
+    </div>
+    <div class="guide-section">
+      <h3>Key Metrics</h3>
+      <div class="guide-metric-grid">
+        <div class="guide-metric"><dt>TSH</dt><dd>Thyroid-Stimulating Hormone: primary screening marker ($25-75 per test)</dd></div>
+        <div class="guide-metric"><dt>Subclinical</dt><dd>Elevated TSH with normal T3/T4 — most common thyroid abnormality</dd></div>
+        <div class="guide-metric"><dt>Levothyroxine</dt><dd>Most prescribed thyroid medication, $10-840/year depending on country/brand</dd></div>
+        <div class="guide-metric"><dt>DALY</dt><dd>Disability-Adjusted Life Year: 1 DALY = 1 year of healthy life lost</dd></div>
+        <div class="guide-metric"><dt>Iodine Deficiency</dt><dd>Leading preventable cause of hypothyroidism; 21 countries still classified as deficient</dd></div>
+        <div class="guide-metric"><dt>Female:Male Ratio</dt><dd>5-8x for hypothyroidism, 5-10x for Graves' disease</dd></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="tab-content" id="tab-dashboard">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title"><span class="icon">&#9881;</span> Model Parameters</div>
+        <div class="input-group">
+          <label>Country / Region Preset</label>
+          <select id="countrySelect" onchange="loadCountry()">
+            <option value="custom">Custom Values</option>
+            <option value="IN" selected>India</option>
+            <option value="US">United States</option>
+            <option value="CN">China</option>
+            <option value="UK">United Kingdom</option>
+            <option value="DE">Germany</option>
+            <option value="JP">Japan</option>
+            <option value="SA">Saudi Arabia</option>
+            <option value="KR">South Korea</option>
+          </select>
+        </div>
+        <div class="input-row">
+          <div class="input-group"><label>Total Population (millions)</label><input type="number" id="population" value="1428" step="1" onchange="recalc()"></div>
+          <div class="input-group"><label>Hypothyroidism Prevalence (%)<span class="info-tip" data-tip="Includes overt + subclinical">?</span></label><input type="number" id="hypoPrev" value="11" step="0.1" onchange="recalc()"></div>
+        </div>
+        <div class="input-row">
+          <div class="input-group"><label>Subclinical Hypothyroidism (%)<span class="info-tip" data-tip="Elevated TSH, normal T3/T4 — majority of hypothyroidism">?</span></label><input type="number" id="subPrev" value="8.5" step="0.1" onchange="recalc()"></div>
+          <div class="input-group"><label>Hyperthyroidism Prevalence (%)</label><input type="number" id="hyperPrev" value="2.5" step="0.1" onchange="recalc()"></div>
+        </div>
+        <div class="input-row">
+          <div class="input-group"><label>Hypothyroidism Cost/Patient/Yr (USD)</label><input type="number" id="hypoCost" value="60" step="5" onchange="recalc()"></div>
+          <div class="input-group"><label>Hyperthyroidism Cost/Patient/Yr (USD)</label><input type="number" id="hyperCost" value="100" step="5" onchange="recalc()"></div>
+        </div>
+        <div class="input-row">
+          <div class="input-group"><label>Levothyroxine Cost/Year (USD)</label><input type="number" id="levosCost" value="20" step="1" onchange="recalc()"></div>
+          <div class="input-group"><label>Thyroid Cancer Cases/Year</label><input type="number" id="cancerCases" value="50000" step="1000" onchange="recalc()"></div>
+        </div>
+        <div class="input-row">
+          <div class="input-group"><label>GDP Per Capita (USD)</label><input type="number" id="gdpPerCapita" value="2500" step="100" onchange="recalc()"></div>
+          <div class="input-group"><label>Avg Annual Wage (USD)</label><input type="number" id="avgWage" value="2100" step="100" onchange="recalc()"></div>
+        </div>
+        <div class="input-group"><label>Working-Age Population (%)</label><input type="number" id="workingAgePct" value="67" step="1" onchange="recalc()"></div>
+        <div class="slider-group">
+          <label>Female Proportion of Cases (%) <span id="femaleVal">75</span></label>
+          <input type="range" id="femaleProp" min="50" max="90" value="75" oninput="document.getElementById('femaleVal').textContent=this.value; recalc()">
+        </div>
+        <div class="slider-group">
+          <label>Thyroidectomy Rate (per 100K/yr) <span id="surgeryVal">15</span></label>
+          <input type="range" id="surgeryRate" min="2" max="60" value="15" oninput="document.getElementById('surgeryVal').textContent=this.value; recalc()">
+        </div>
+      </div>
+
+      <div>
+        <div class="grid-2" style="margin-bottom:24px">
+          <div class="stat-card blue">
+            <div class="stat-label">Total Thyroid Disorders</div>
+            <div class="stat-value" id="statPop">—</div>
+            <div class="stat-sub" id="statPopSub">—</div>
+          </div>
+          <div class="stat-card amber">
+            <div class="stat-label">Hypothyroidism</div>
+            <div class="stat-value" id="statHypo">—</div>
+            <div class="stat-sub" id="statHypoSub">—</div>
+          </div>
+          <div class="stat-card green">
+            <div class="stat-label">Total Annual Cost</div>
+            <div class="stat-value" id="statCost">—</div>
+            <div class="stat-sub" id="statCostSub">—</div>
+          </div>
+          <div class="stat-card red">
+            <div class="stat-label">DALYs Lost</div>
+            <div class="stat-value" id="statDaly">—</div>
+            <div class="stat-sub">years of healthy life</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title"><span class="icon">&#128200;</span> Cost Breakdown</div>
+          <div class="burden-bar" id="burdenBar"></div>
+          <div class="burden-legend" id="burdenLegend"></div>
+          <div class="chart-container-sm" style="margin-top:16px"><canvas id="costBreakdownChart"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-4" style="margin-top:24px">
+      <div class="stat-card blue">
+        <div class="stat-label">Hyperthyroidism</div>
+        <div class="stat-value" id="statHyper">—</div>
+        <div class="stat-sub">including Graves' disease</div>
+      </div>
+      <div class="stat-card purple">
+        <div class="stat-label">Thyroid Cancer</div>
+        <div class="stat-value" id="statCancer">—</div>
+        <div class="stat-sub">new cases/year</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-label">Workforce Impact</div>
+        <div class="stat-value" id="statWork">—</div>
+        <div class="stat-sub">productivity loss/year</div>
+      </div>
+      <div class="stat-card amber">
+        <div class="stat-label">Female Cases</div>
+        <div class="stat-value" id="statFemale">—</div>
+        <div class="stat-sub" id="statFemaleSub">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROJECTIONS -->
+  <div class="tab-content" id="tab-projections">
+    <div class="section-header"><h2>Future Burden Projections</h2><p>Thyroid disorders projected to affect 6-8% of the global population by 2050</p><div class="divider"></div></div>
+    <div class="scenario-bar">
+      <button class="scenario-pill active-opt" onclick="setScenario('optimistic', this)">&#x1F7E2; Optimistic (Iodine Programs)</button>
+      <button class="scenario-pill active-base" onclick="setScenario('baseline', this)">&#x1F535; Baseline (Current Trends)</button>
+      <button class="scenario-pill active-pess" onclick="setScenario('pessimistic', this)">&#x1F7E1; Pessimistic (Environmental Factors)</button>
+    </div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">Thyroid Disorder Population</div><div class="chart-container"><canvas id="projectionChart"></canvas></div></div>
+      <div class="card"><div class="card-title">Economic Burden Projection</div><div class="chart-container"><canvas id="costProjectionChart"></canvas></div></div>
+    </div>
+    <div class="grid-3" style="margin-top:24px">
+      <div class="stat-card blue"><div class="stat-label">5-Year (2031)</div><div class="stat-value" id="proj5yr">—</div><div class="stat-sub" id="proj5yrCost">—</div></div>
+      <div class="stat-card amber"><div class="stat-label">15-Year (2041)</div><div class="stat-value" id="proj15yr">—</div><div class="stat-sub" id="proj15yrCost">—</div></div>
+      <div class="stat-card green"><div class="stat-label">30-Year (2056)</div><div class="stat-value" id="proj30yr">—</div><div class="stat-sub" id="proj30yrCost">—</div></div>
+    </div>
+    <div class="card" style="margin-top:24px">
+      <div class="card-title">Projection Parameters</div>
+      <div class="input-row-3">
+        <div class="slider-group"><label>Prevalence CAGR (%) <span id="cagrVal">1.7</span></label><input type="range" id="cagr" min="0.5" max="4" value="1.7" step="0.1" oninput="document.getElementById('cagrVal').textContent=this.value; recalcProjections()"></div>
+        <div class="slider-group"><label>Pop. Growth Rate (%) <span id="popGrowthVal">0.8</span></label><input type="range" id="popGrowth" min="-0.5" max="3" value="0.8" step="0.1" oninput="document.getElementById('popGrowthVal').textContent=this.value; recalcProjections()"></div>
+        <div class="slider-group"><label>Healthcare Cost Inflation (%) <span id="costInflVal">12.1</span></label><input type="range" id="costInfl" min="2" max="18" value="12.1" step="0.5" oninput="document.getElementById('costInflVal').textContent=this.value; recalcProjections()"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ECONOMIC -->
+  <div class="tab-content" id="tab-economic">
+    <div class="section-header"><h2>Economic Burden Deep Dive</h2><p>Treatment costs, surgical economics, and thyroid cancer financial toxicity</p><div class="divider"></div></div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">Cost by Disorder Type</div><div class="chart-container"><canvas id="econPieChart"></canvas></div></div>
+      <div class="card"><div class="card-title">Treatment Cost Comparison (per patient/yr)</div><div class="chart-container"><canvas id="treatmentChart"></canvas></div></div>
+    </div>
+    <div class="grid-3" style="margin-top:24px">
+      <div class="stat-card blue"><div class="stat-label">Hypothyroidism Costs</div><div class="stat-value" id="econHypo">—</div><div class="stat-sub">levothyroxine + monitoring</div></div>
+      <div class="stat-card amber"><div class="stat-label">Hyperthyroidism Costs</div><div class="stat-value" id="econHyper">—</div><div class="stat-sub">ATDs, RAI, surgery</div></div>
+      <div class="stat-card red"><div class="stat-label">Cancer Treatment Costs</div><div class="stat-value" id="econCancer">—</div><div class="stat-sub">highest bankruptcy risk of any cancer</div></div>
+    </div>
+    <div class="card" style="margin-top:24px">
+      <div class="card-title">Procedure Cost Comparison</div>
+      <div class="chart-container"><canvas id="procedureChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- WORKFORCE -->
+  <div class="tab-content" id="tab-workforce">
+    <div class="section-header"><h2>Workforce &amp; Societal Impact</h2><p>Productivity loss, gender disparity, and quality of life</p><div class="divider"></div></div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">Productivity Loss</div><div class="chart-container"><canvas id="workforceChart"></canvas></div></div>
+      <div class="card"><div class="card-title">DALY Components</div><div class="chart-container"><canvas id="dalyChart"></canvas></div></div>
+    </div>
+    <div class="grid-4" style="margin-top:24px">
+      <div class="stat-card blue"><div class="stat-label">Hyperthyroid Work Disability</div><div class="stat-value">~30%</div><div class="stat-sub">partially or fully work-disabled</div></div>
+      <div class="stat-card amber"><div class="stat-label">Anxiety in Hyperthyroid</div><div class="stat-value">30–60%</div><div class="stat-sub">prevalence of anxiety disorders</div></div>
+      <div class="stat-card green"><div class="stat-label">First-Year Sick Days</div><div class="stat-value">~12</div><div class="stat-sub">excess days post-diagnosis</div></div>
+      <div class="stat-card red"><div class="stat-label">GDP Impact</div><div class="stat-value" id="wfGdp">—</div><div class="stat-sub">% of national GDP</div></div>
+    </div>
+    <div class="card" style="margin-top:24px">
+      <div class="card-title">Gender Disparity &amp; Disability Weights</div>
+      <div class="grid-3">
+        <div style="text-align:center; padding:16px"><div style="font-size:2.4rem; font-family:var(--serif); color:var(--accent)">5–8×</div><div style="font-size:0.82rem; color:var(--text-dim); margin-top:4px">Female-to-male ratio for hypothyroidism</div></div>
+        <div style="text-align:center; padding:16px"><div style="font-size:2.4rem; font-family:var(--serif); color:var(--warn)">0.145</div><div style="font-size:0.82rem; color:var(--text-dim); margin-top:4px">Disability weight: hyperthyroidism (vs 0.019 hypothyroidism)</div></div>
+        <div style="text-align:center; padding:16px"><div style="font-size:2.4rem; font-family:var(--serif); color:var(--danger)">46.7</div><div style="font-size:0.82rem; color:var(--text-dim); margin-top:4px">Thyroid cancer incidence per 100K women (S. Korea — highest globally)</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COUNTRY -->
+  <div class="tab-content" id="tab-country">
+    <div class="section-header"><h2>Country Comparison</h2><p>Thyroid disorder metrics across 8 countries</p><div class="divider"></div></div>
+    <div class="card"><div class="card-title">Hypothyroidism Prevalence &amp; Treatment Cost</div><div class="chart-container" style="height:450px"><canvas id="countryCompChart"></canvas></div></div>
+    <div class="card" style="margin-top:24px">
+      <div class="card-title">Full Country Data Table</div>
+      <div class="table-scroll">
+        <table class="data-table"><thead><tr>
+          <th>Country</th><th>Pop (M)</th><th>Hypo (%)</th><th>Hyper (%)</th><th>Hypo Cost</th><th>Levothyroxine/yr</th><th>Iodine Status</th><th>DALYs/100K</th>
+        </tr></thead><tbody id="countryTableBody"></tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- METHODOLOGY -->
+  <div class="tab-content" id="tab-methodology">
+    <div class="section-header"><h2>Methodology &amp; Data Sources</h2><div class="divider"></div></div>
+    <div class="card">
+      <div class="card-title">Model Design</div>
+      <div class="methodology">
+        <h4>Thyroid Burden Model</h4>
+        <p>The model separates hypothyroidism (overt + subclinical), hyperthyroidism, and thyroid cancer as distinct cost and DALY streams. Subclinical hypothyroidism is modeled separately because it represents the majority of cases but has lower per-patient costs and a much lower disability weight (0.019 vs 0.145 for hyperthyroidism).</p>
+        <p style="margin-top:8px"><strong>Scenarios:</strong> Optimistic (0.85x) reflects improved iodine supplementation programs globally. Baseline (1.00x) continues current trends. Pessimistic (1.10x) accounts for endocrine disruptors, overdiagnosis pressure, and environmental factors.</p>
+      </div>
+    </div>
+    <div class="card" style="margin-top:24px">
+      <div class="card-title">Data Sources</div>
+      <div class="methodology">
+        <p><strong>Prevalence:</strong> China TIDE study (31 provinces, 13.95% hypothyroidism). NHANES (USA). Country-specific endocrine surveys. GBD 2021.</p>
+        <p style="margin-top:8px"><strong>Cancer:</strong> GLOBOCAN 2022 (821,214 new cases globally). South Korea's thyroid cancer epidemic (largely attributed to overdiagnosis).</p>
+        <p style="margin-top:8px"><strong>Costs:</strong> MEPS 2018 (US: $61.5B total). Systematic reviews of thyroid disorder costs. Levothyroxine pricing surveys across countries.</p>
+        <p style="margin-top:8px"><strong>DALYs:</strong> GBD 2021. Disability weights: hypothyroidism 0.019, hyperthyroidism 0.145.</p>
+      </div>
+    </div>
+    <div class="card" style="margin-top:24px"><div class="card-title">Limitations</div><div class="methodology"><p>Thyroid disorder prevalence is highly sensitive to TSH cutoff values used (varies between 4.0-5.0 mIU/L). Subclinical hypothyroidism treatment guidelines remain controversial — many patients remain untreated, making cost modeling difficult. The massive thyroid cancer incidence in South Korea (46.7/100K women) is largely attributed to screening-driven overdiagnosis, making true clinical burden hard to estimate. Iodine excess (Japan, Korea) causes different thyroid pathology than iodine deficiency, complicating global comparisons.</p></div></div>
+  </div>
+
+</div>
+
+<script>
+const COUNTRIES = {
+  IN: { name:"India", pop:1428, hypoPrev:11, subPrev:8.5, hyperPrev:2.5, hypoCost:60, hyperCost:100, levosCost:20, cancerCases:50000, gdp:2500, wage:2100, workPop:67, daly:45, iodine:"Adequate (211 μg/L)", femaleProp:75, surgeryRate:15, cagr:1.7, popGr:0.8, costInfl:12.1, thyroidectomyCost:1500 },
+  US: { name:"United States", pop:335, hypoPrev:5, subPrev:6, hyperPrev:1.2, hypoCost:1500, hyperCost:1000, levosCost:200, cancerCases:44000, gdp:76000, wage:63000, workPop:62, daly:30, iodine:"Adequate", femaleProp:78, surgeryRate:30, cagr:1.2, popGr:0.5, costInfl:8.7, thyroidectomyCost:15000 },
+  CN: { name:"China", pop:1412, hypoPrev:14, subPrev:13, hyperPrev:1.8, hypoCost:200, hyperCost:300, levosCost:30, cancerCases:221000, gdp:12700, wage:9500, workPop:70, daly:35, iodine:"Adequate (20% excessive)", femaleProp:76, surgeryRate:25, cagr:1.5, popGr:0.1, costInfl:12.3, thyroidectomyCost:3000 },
+  UK: { name:"United Kingdom", pop:67, hypoPrev:3.5, subPrev:5.5, hyperPrev:1.2, hypoCost:500, hyperCost:400, levosCost:50, cancerCases:3800, gdp:46000, wage:38000, workPop:63, daly:20, iodine:"Mildly deficient", femaleProp:80, surgeryRate:20, cagr:1.0, popGr:0.3, costInfl:8.3, thyroidectomyCost:5000 },
+  DE: { name:"Germany", pop:84, hypoPrev:4.5, subPrev:4, hyperPrev:2, hypoCost:600, hyperCost:500, levosCost:80, cancerCases:6200, gdp:52000, wage:44000, workPop:64, daly:25, iodine:"Mildly deficient", femaleProp:78, surgeryRate:25, cagr:1.0, popGr:-0.1, costInfl:8.3, thyroidectomyCost:8000 },
+  JP: { name:"Japan", pop:124, hypoPrev:7.5, subPrev:9, hyperPrev:1, hypoCost:800, hyperCost:600, levosCost:60, cancerCases:18000, gdp:34000, wage:30000, workPop:59, daly:20, iodine:"Excessive (seaweed)", femaleProp:82, surgeryRate:20, cagr:0.8, popGr:-0.5, costInfl:8.3, thyroidectomyCost:6000 },
+  SA: { name:"Saudi Arabia", pop:37, hypoPrev:11.5, subPrev:8.5, hyperPrev:3.5, hypoCost:300, hyperCost:400, levosCost:50, cancerCases:4500, gdp:28000, wage:22000, workPop:72, daly:30, iodine:"Adequate", femaleProp:74, surgeryRate:18, cagr:1.5, popGr:1.5, costInfl:12.1, thyroidectomyCost:5000 },
+  KR: { name:"South Korea", pop:52, hypoPrev:4, subPrev:2.5, hyperPrev:1.2, hypoCost:700, hyperCost:500, levosCost:50, cancerCases:28000, gdp:33000, wage:28000, workPop:72, daly:25, iodine:"Excessive", femaleProp:80, surgeryRate:55, cagr:1.0, popGr:-0.2, costInfl:12.3, thyroidectomyCost:5000 },
+};
+
+let charts = {};
+let activeScenarios = { optimistic: true, baseline: true, pessimistic: true };
+
+function toggleTheme() {
+  const isLight = document.getElementById('themeToggle').checked;
+  document.documentElement.setAttribute('data-theme', isLight ? 'light' : 'dark');
+  document.getElementById('themeLabel').textContent = isLight ? 'Dark' : 'Light';
+  updateChartColors(isLight);
+}
+function updateChartColors(isLight) {
+  const tc = isLight ? '#475569' : '#8899b0';
+  const gc = isLight ? 'rgba(148,163,184,0.25)' : 'rgba(42,58,82,0.4)';
+  const tkc = isLight ? '#64748b' : '#5a6d85';
+  chartDefaults.plugins.legend.labels.color = tc;
+  chartDefaults.scales.x.ticks.color = tkc;
+  chartDefaults.scales.x.grid.color = gc;
+  chartDefaults.scales.y.ticks.color = tkc;
+  chartDefaults.scales.y.grid.color = gc;
+  recalc();
+}
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  if (btn) btn.classList.add('active');
+  setTimeout(() => { Object.values(charts).forEach(c => { if(c) c.resize(); }); }, 50);
+}
+
+function loadCountry() {
+  const code = document.getElementById('countrySelect').value;
+  if (code === 'custom') return;
+  const c = COUNTRIES[code];
+  document.getElementById('population').value = c.pop;
+  document.getElementById('hypoPrev').value = c.hypoPrev;
+  document.getElementById('subPrev').value = c.subPrev;
+  document.getElementById('hyperPrev').value = c.hyperPrev;
+  document.getElementById('hypoCost').value = c.hypoCost;
+  document.getElementById('hyperCost').value = c.hyperCost;
+  document.getElementById('levosCost').value = c.levosCost;
+  document.getElementById('cancerCases').value = c.cancerCases;
+  document.getElementById('gdpPerCapita').value = c.gdp;
+  document.getElementById('avgWage').value = c.wage;
+  document.getElementById('workingAgePct').value = c.workPop;
+  document.getElementById('femaleProp').value = c.femaleProp;
+  document.getElementById('femaleVal').textContent = c.femaleProp;
+  document.getElementById('surgeryRate').value = c.surgeryRate;
+  document.getElementById('surgeryVal').textContent = c.surgeryRate;
+  document.getElementById('cagr').value = c.cagr;
+  document.getElementById('cagrVal').textContent = c.cagr;
+  document.getElementById('popGrowth').value = c.popGr;
+  document.getElementById('popGrowthVal').textContent = c.popGr;
+  document.getElementById('costInfl').value = c.costInfl;
+  document.getElementById('costInflVal').textContent = c.costInfl;
+  recalc();
+}
+
+function fmt(n, dec=1) {
+  if (n >= 1e12) return (n/1e12).toFixed(dec) + 'T';
+  if (n >= 1e9) return (n/1e9).toFixed(dec) + 'B';
+  if (n >= 1e6) return (n/1e6).toFixed(dec) + 'M';
+  if (n >= 1e3) return (n/1e3).toFixed(dec) + 'K';
+  return n.toFixed(dec);
+}
+
+function recalc() {
+  const pop = parseFloat(document.getElementById('population').value) * 1e6;
+  const hypoPrev = parseFloat(document.getElementById('hypoPrev').value) / 100;
+  const subPrev = parseFloat(document.getElementById('subPrev').value) / 100;
+  const hyperPrev = parseFloat(document.getElementById('hyperPrev').value) / 100;
+  const hypoCost = parseFloat(document.getElementById('hypoCost').value);
+  const hyperCost = parseFloat(document.getElementById('hyperCost').value);
+  const levosCost = parseFloat(document.getElementById('levosCost').value);
+  const cancerCases = parseFloat(document.getElementById('cancerCases').value);
+  const gdp = parseFloat(document.getElementById('gdpPerCapita').value);
+  const wage = parseFloat(document.getElementById('avgWage').value);
+  const workPop = parseFloat(document.getElementById('workingAgePct').value) / 100;
+  const femaleProp = parseFloat(document.getElementById('femaleProp').value) / 100;
+  const surgeryRate = parseFloat(document.getElementById('surgeryRate').value);
+
+  const code = document.getElementById('countrySelect').value;
+  const c = (code !== 'custom' && COUNTRIES[code]) ? COUNTRIES[code] : { daly:35, thyroidectomyCost:5000 };
+
+  const hypoPop = pop * hypoPrev;
+  const subPop = pop * subPrev;
+  const hyperPop = pop * hyperPrev;
+  const totalThyroid = hypoPop + hyperPop; // hypo includes subclinical
+  const overtHypo = hypoPop - subPop;
+
+  // Direct costs
+  const hypoDirect = overtHypo * hypoCost + subPop * (hypoCost * 0.3); // subclinical cheaper
+  const hyperDirect = hyperPop * hyperCost;
+  const levoTotal = (overtHypo + subPop * 0.3) * levosCost; // ~30% subclinical treated
+  const surgeries = (pop / 100000) * surgeryRate;
+  const surgeryCost = surgeries * c.thyroidectomyCost;
+  const cancerCost = cancerCases * c.thyroidectomyCost * 2; // ~2x surgery cost for cancer treatment
+  const totalDirect = hypoDirect + hyperDirect + levoTotal + surgeryCost + cancerCost;
+
+  // Indirect costs
+  const workingThyroid = totalThyroid * workPop;
+  const absentDays = workingThyroid * 3; // 3 excess sick days
+  const absentCost = absentDays * (wage / 250);
+  const presentCost = workingThyroid * 0.05 * wage; // 5% presenteeism
+  const particLoss = workingThyroid * 0.08; // 8% reduced participation
+  const particCost = particLoss * wage;
+  const totalIndirect = absentCost + presentCost + particCost;
+  const totalCost = totalDirect + totalIndirect;
+
+  const dalyRate = c.daly;
+  const totalDalys = (pop / 100000) * dalyRate;
+
+  // Dashboard
+  document.getElementById('statPop').textContent = fmt(totalThyroid);
+  document.getElementById('statPopSub').textContent = ((hypoPrev + hyperPrev) * 100).toFixed(1) + '% combined prevalence';
+  document.getElementById('statHypo').textContent = fmt(hypoPop);
+  document.getElementById('statHypoSub').textContent = 'incl. ' + fmt(subPop) + ' subclinical';
+  document.getElementById('statCost').textContent = '$' + fmt(totalCost);
+  document.getElementById('statCostSub').textContent = 'Direct $' + fmt(totalDirect) + ' + Indirect $' + fmt(totalIndirect);
+  document.getElementById('statDaly').textContent = fmt(totalDalys);
+  document.getElementById('statHyper').textContent = fmt(hyperPop);
+  document.getElementById('statCancer').textContent = fmt(cancerCases);
+  document.getElementById('statWork').textContent = '$' + fmt(totalIndirect);
+  document.getElementById('statFemale').textContent = fmt(totalThyroid * femaleProp);
+  document.getElementById('statFemaleSub').textContent = (femaleProp * 100).toFixed(0) + '% of all cases';
+
+  const gdpImpact = totalCost / (pop * gdp) * 100;
+  document.getElementById('wfGdp').textContent = gdpImpact.toFixed(3) + '%';
+
+  // Burden bar
+  const segments = [
+    { label: 'Hypothyroidism care', val: hypoDirect, color: '#22d3ee' },
+    { label: 'Levothyroxine', val: levoTotal, color: '#38bdf8' },
+    { label: 'Hyperthyroidism care', val: hyperDirect, color: '#818cf8' },
+    { label: 'Surgery', val: surgeryCost, color: '#fbbf24' },
+    { label: 'Cancer treatment', val: cancerCost, color: '#f87171' },
+    { label: 'Productivity loss', val: totalIndirect, color: '#fb923c' },
+  ];
+  document.getElementById('burdenBar').innerHTML = segments.map(s => {
+    const pct = (s.val / totalCost * 100);
+    return `<div style="width:${pct}%; background:${s.color}" title="${s.label}: $${fmt(s.val)} (${pct.toFixed(1)}%)">${pct > 8 ? pct.toFixed(0)+'%' : ''}</div>`;
+  }).join('');
+  document.getElementById('burdenLegend').innerHTML = segments.map(s =>
+    `<div class="burden-legend-item"><div class="swatch" style="background:${s.color}"></div>${s.label}: $${fmt(s.val)}</div>`
+  ).join('');
+
+  updateAllCharts(segments, hypoDirect, hyperDirect, cancerCost, totalIndirect, levoTotal, surgeryCost, c, totalDalys, absentCost, presentCost, particCost, hypoPop, hyperPop);
+  recalcProjections();
+  updateCountryTab();
+}
+
+function destroyChart(key) { if (charts[key]) { charts[key].destroy(); charts[key] = null; } }
+let chartDefaults = {
+  responsive: true, maintainAspectRatio: false,
+  plugins: { legend: { labels: { color: '#8899b0', font: { family: "'DM Sans'" }, boxWidth: 12, padding: 12 } } },
+  scales: { x: { ticks: { color: '#5a6d85', font: { family: "'DM Sans'", size: 11 } }, grid: { color: 'rgba(42,58,82,0.4)' } },
+            y: { ticks: { color: '#5a6d85', font: { family: "'DM Sans'", size: 11 } }, grid: { color: 'rgba(42,58,82,0.4)' } } }
+};
+
+function updateAllCharts(segments, hypoDirect, hyperDirect, cancerCost, totalIndirect, levoTotal, surgeryCost, c, totalDalys, absentCost, presentCost, particCost, hypoPop, hyperPop) {
+  // Cost breakdown doughnut
+  destroyChart('costBreakdown');
+  charts.costBreakdown = new Chart(document.getElementById('costBreakdownChart'), {
+    type: 'doughnut',
+    data: { labels: segments.map(s => s.label), datasets: [{ data: segments.map(s => s.val), backgroundColor: segments.map(s => s.color), borderWidth: 0 }] },
+    options: { responsive: true, maintainAspectRatio: false, cutout: '65%',
+      plugins: { legend: { position: 'right', labels: { color: '#8899b0', font: { family: "'DM Sans'", size: 11 }, boxWidth: 10, padding: 8 } } } }
+  });
+
+  // Economic
+  document.getElementById('econHypo').textContent = '$' + fmt(hypoDirect + levoTotal);
+  document.getElementById('econHyper').textContent = '$' + fmt(hyperDirect + surgeryCost);
+  document.getElementById('econCancer').textContent = '$' + fmt(cancerCost);
+
+  destroyChart('econPie');
+  charts.econPie = new Chart(document.getElementById('econPieChart'), {
+    type: 'pie',
+    data: { labels: ['Hypothyroidism', 'Hyperthyroidism', 'Cancer', 'Indirect'],
+      datasets: [{ data: [hypoDirect + levoTotal, hyperDirect + surgeryCost, cancerCost, totalIndirect], backgroundColor: ['#22d3ee', '#818cf8', '#f87171', '#fb923c'], borderWidth: 0 }] },
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { color: '#8899b0', font: { family: "'DM Sans'" }, boxWidth: 10, padding: 12 } } } }
+  });
+
+  const hypoCostPP = parseFloat(document.getElementById('hypoCost').value);
+  const hyperCostPP = parseFloat(document.getElementById('hyperCost').value);
+  const treatments = [
+    { name: 'Hypothyroidism\n(stable)', val: hypoCostPP, color: '#22d3ee' },
+    { name: 'Levothyroxine\nonly', val: parseFloat(document.getElementById('levosCost').value), color: '#38bdf8' },
+    { name: 'Hyperthyroidism\n(medical)', val: hyperCostPP, color: '#818cf8' },
+    { name: 'Anti-thyroid\ndrugs', val: hyperCostPP * 0.6, color: '#34d399' },
+    { name: 'RAI\ntreatment', val: c.thyroidectomyCost * 0.8, color: '#fbbf24' },
+    { name: 'Thyroidectomy', val: c.thyroidectomyCost, color: '#f87171' },
+  ];
+  destroyChart('treatment');
+  charts.treatment = new Chart(document.getElementById('treatmentChart'), {
+    type: 'bar', data: { labels: treatments.map(t => t.name), datasets: [{ data: treatments.map(t => t.val), backgroundColor: treatments.map(t => t.color), borderWidth: 0, borderRadius: 6 }] },
+    options: { ...chartDefaults, plugins: { ...chartDefaults.plugins, legend: { display: false } },
+      scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, title: { display: true, text: 'Cost (USD)', color: '#5a6d85' } } } }
+  });
+
+  // Procedure comparison
+  const procedures = [
+    { name: 'TSH Screening', val: hypoCostPP * 0.5, color: '#34d399' },
+    { name: 'Thyroid\nUltrasound', val: hypoCostPP * 1.5, color: '#38bdf8' },
+    { name: 'Fine Needle\nAspiration', val: c.thyroidectomyCost * 0.1, color: '#818cf8' },
+    { name: 'Thyroidectomy', val: c.thyroidectomyCost, color: '#fbbf24' },
+    { name: 'Radioactive\nIodine', val: c.thyroidectomyCost * 0.8, color: '#fb923c' },
+    { name: 'Cancer\nTreatment', val: c.thyroidectomyCost * 2, color: '#f87171' },
+  ];
+  destroyChart('procedure');
+  charts.procedure = new Chart(document.getElementById('procedureChart'), {
+    type: 'bar', data: { labels: procedures.map(p => p.name), datasets: [{ data: procedures.map(p => p.val), backgroundColor: procedures.map(p => p.color), borderWidth: 0, borderRadius: 6 }] },
+    options: { ...chartDefaults, plugins: { ...chartDefaults.plugins, legend: { display: false } },
+      scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, title: { display: true, text: 'Cost (USD)', color: '#5a6d85' } } } }
+  });
+
+  // Workforce
+  destroyChart('workforce');
+  charts.workforce = new Chart(document.getElementById('workforceChart'), {
+    type: 'bar', data: { labels: ['Absenteeism', 'Presenteeism', 'Reduced\nParticipation'],
+      datasets: [{ data: [absentCost, presentCost, particCost], backgroundColor: ['#fbbf24', '#fb923c', '#f87171'], borderWidth: 0, borderRadius: 6 }] },
+    options: { ...chartDefaults, plugins: { ...chartDefaults.plugins, legend: { display: false } },
+      scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, title: { display: true, text: 'Annual cost (USD)', color: '#5a6d85' } } } }
+  });
+
+  // DALY doughnut
+  destroyChart('daly');
+  charts.daly = new Chart(document.getElementById('dalyChart'), {
+    type: 'doughnut',
+    data: { labels: ['Hypothyroidism (YLD)', 'Hyperthyroidism (YLD)', 'Thyroid Cancer (YLL)', 'Thyroid Cancer (YLD)'],
+      datasets: [{ data: [totalDalys * 0.2, totalDalys * 0.35, totalDalys * 0.3, totalDalys * 0.15], backgroundColor: ['#22d3ee', '#818cf8', '#f87171', '#f472b6'], borderWidth: 0 }] },
+    options: { responsive: true, maintainAspectRatio: false, cutout: '60%',
+      plugins: { legend: { position: 'bottom', labels: { color: '#8899b0', font: { family: "'DM Sans'" }, boxWidth: 10 } } } }
+  });
+}
+
+function setScenario(sc, el) {
+  activeScenarios[sc] = !activeScenarios[sc];
+  const cls = sc === 'optimistic' ? 'active-opt' : sc === 'baseline' ? 'active-base' : 'active-pess';
+  el.classList.toggle(cls);
+  recalcProjections();
+}
+
+function recalcProjections() {
+  const pop = parseFloat(document.getElementById('population').value) * 1e6;
+  const prev = (parseFloat(document.getElementById('hypoPrev').value) + parseFloat(document.getElementById('hyperPrev').value)) / 100;
+  const avgCost = parseFloat(document.getElementById('hypoCost').value);
+  const cagr = parseFloat(document.getElementById('cagr').value) / 100;
+  const popGr = parseFloat(document.getElementById('popGrowth').value) / 100;
+  const costInfl = parseFloat(document.getElementById('costInfl').value) / 100;
+
+  const scenarios = { optimistic: 0.85, baseline: 1.0, pessimistic: 1.10 };
+  const colors = { optimistic: '#34d399', baseline: '#22d3ee', pessimistic: '#fbbf24' };
+  const years = []; for (let y = 2026; y <= 2056; y++) years.push(y);
+  const datasets = [], costDatasets = [];
+  const projData = {};
+
+  Object.entries(scenarios).forEach(([name, mult]) => {
+    if (!activeScenarios[name]) return;
+    const popData = [], costData = [];
+    years.forEach(y => {
+      const t = y - 2026;
+      const futPop = pop * Math.pow(1 + popGr, t);
+      const futPrev = prev * Math.pow(1 + cagr * mult, t);
+      const cappedPrev = Math.min(futPrev, 0.25);
+      const cases = futPop * cappedPrev;
+      popData.push(cases / 1e6);
+      const futCost = avgCost * Math.pow(1 + costInfl * 0.5, t);
+      costData.push(cases * futCost / 1e9);
+    });
+    projData[name] = { pop: popData, cost: costData };
+    datasets.push({ label: name.charAt(0).toUpperCase() + name.slice(1), data: popData, borderColor: colors[name], backgroundColor: colors[name] + '18', fill: name === 'baseline', tension: 0.3, borderWidth: 2, pointRadius: 0 });
+    costDatasets.push({ label: name.charAt(0).toUpperCase() + name.slice(1), data: costData, borderColor: colors[name], backgroundColor: colors[name] + '18', fill: name === 'baseline', tension: 0.3, borderWidth: 2, pointRadius: 0 });
+  });
+
+  const base = projData.baseline || projData[Object.keys(projData)[0]];
+  if (base) {
+    document.getElementById('proj5yr').textContent = base.pop[5] ? base.pop[5].toFixed(1) + 'M' : '—';
+    document.getElementById('proj5yrCost').textContent = base.cost[5] ? '$' + base.cost[5].toFixed(1) + 'B' : '—';
+    document.getElementById('proj15yr').textContent = base.pop[15] ? base.pop[15].toFixed(1) + 'M' : '—';
+    document.getElementById('proj15yrCost').textContent = base.cost[15] ? '$' + base.cost[15].toFixed(1) + 'B' : '—';
+    document.getElementById('proj30yr').textContent = base.pop[30] ? base.pop[30].toFixed(1) + 'M' : '—';
+    document.getElementById('proj30yrCost').textContent = base.cost[30] ? '$' + base.cost[30].toFixed(1) + 'B' : '—';
+  }
+
+  destroyChart('projection');
+  charts.projection = new Chart(document.getElementById('projectionChart'), { type: 'line', data: { labels: years, datasets }, options: { ...chartDefaults, scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, title: { display: true, text: 'Thyroid disorder population (M)', color: '#5a6d85' } } } } });
+  destroyChart('costProjection');
+  charts.costProjection = new Chart(document.getElementById('costProjectionChart'), { type: 'line', data: { labels: years, datasets: costDatasets }, options: { ...chartDefaults, scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, title: { display: true, text: 'Direct cost (USD billions)', color: '#5a6d85' } } } } });
+}
+
+function updateCountryTab() {
+  const entries = Object.entries(COUNTRIES).sort((a,b) => (b[1].pop * (b[1].hypoPrev + b[1].hyperPrev)/100) - (a[1].pop * (a[1].hypoPrev + a[1].hyperPrev)/100));
+  document.getElementById('countryTableBody').innerHTML = entries.map(([code, c]) => {
+    return `<tr><td><strong>${c.name}</strong></td><td class="num">${c.pop}</td><td class="num">${c.hypoPrev}%</td><td class="num">${c.hyperPrev}%</td><td class="num">$${c.hypoCost}</td><td class="num">$${c.levosCost}</td><td>${c.iodine}</td><td class="num">${c.daly}</td></tr>`;
+  }).join('');
+
+  destroyChart('countryComp');
+  charts.countryComp = new Chart(document.getElementById('countryCompChart'), {
+    type: 'bar',
+    data: { labels: entries.map(([_, c]) => c.name), datasets: [
+      { label: 'Hypothyroidism (%)', data: entries.map(([_, c]) => c.hypoPrev), backgroundColor: '#22d3ee', borderRadius: 4, borderWidth: 0, yAxisID: 'y' },
+      { label: 'Hypo Cost/Pt (USD)', data: entries.map(([_, c]) => c.hypoCost), backgroundColor: '#fbbf2480', borderColor: '#fbbf24', type: 'line', borderWidth: 2, pointRadius: 4, yAxisID: 'y1' },
+    ]},
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#8899b0', font: { family: "'DM Sans'" }, boxWidth: 10 } } },
+      scales: {
+        x: { ticks: { color: '#5a6d85', font: { family: "'DM Sans'", size: 10 }, maxRotation: 45 }, grid: { color: 'rgba(42,58,82,0.3)' } },
+        y: { position: 'left', ticks: { color: '#22d3ee', font: { family: "'DM Sans'", size: 11 } }, grid: { color: 'rgba(42,58,82,0.3)' }, title: { display: true, text: 'Hypothyroidism prev (%)', color: '#22d3ee' } },
+        y1: { position: 'right', ticks: { color: '#fbbf24', font: { family: "'DM Sans'", size: 11 } }, grid: { display: false }, title: { display: true, text: 'Cost/Patient (USD)', color: '#fbbf24' } }
+      }
+    }
+  });
+}
+
+Chart.defaults.font.family = "'DM Sans'";
+loadCountry();
+</script>
+</body>
+</html>

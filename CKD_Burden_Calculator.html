@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CKD Global Burden Calculator & Visualizer</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,500;0,9..40,700;1,9..40,400&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0B1120;
+  --bg2: #111827;
+  --bg3: #1a2332;
+  --card: #162032;
+  --card-hover: #1d2b42;
+  --border: #2a3a52;
+  --border-light: #334466;
+  --text: #e2e8f0;
+  --text-dim: #8899b0;
+  --text-muted: #5a6d85;
+  --accent: #818cf8;
+  --accent2: #38bdf8;
+  --accent3: #34d399;
+  --warn: #fbbf24;
+  --danger: #f87171;
+  --pink: #f472b6;
+  --orange: #fb923c;
+  --serif: 'Instrument Serif', Georgia, serif;
+  --sans: 'DM Sans', system-ui, sans-serif;
+  --radius: 12px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.3);
+}
+
+[data-theme="light"] {
+  --bg: #f0f4f8;
+  --bg2: #e2e8f0;
+  --bg3: #dde4ed;
+  --card: #ffffff;
+  --card-hover: #f8fafc;
+  --border: #cbd5e1;
+  --border-light: #94a3b8;
+  --text: #1e293b;
+  --text-dim: #475569;
+  --text-muted: #64748b;
+  --accent: #6366f1;
+  --accent2: #0284c7;
+  --accent3: #059669;
+  --warn: #d97706;
+  --danger: #dc2626;
+  --pink: #db2777;
+  --orange: #ea580c;
+  --shadow: 0 4px 24px rgba(0,0,0,0.08);
+}
+[data-theme="light"] .site-header { background: linear-gradient(135deg, #1a1040 0%, #2d1b69 50%, #1a1040 100%); }
+[data-theme="light"] .stat-value { color: var(--text); }
+[data-theme="light"] .card-title { color: var(--text); }
+[data-theme="light"] .section-header h2 { color: var(--text); }
+[data-theme="light"] .tab.active { background: var(--card); color: var(--text); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+[data-theme="light"] .data-table tr:hover td { background: rgba(99,102,241,0.04); }
+[data-theme="light"] .burden-bar div { color: #fff; }
+[data-theme="light"] input[type="range"] { background: var(--bg2); border-color: var(--border); }
+[data-theme="light"] input[type="range"]::-webkit-slider-thumb { border-color: #fff; box-shadow: 0 0 8px rgba(99,102,241,0.3); }
+[data-theme="light"] .methodology { background: #f1f5f9; }
+[data-theme="light"] .info-tip:hover::after { background: #fff; }
+[data-theme="light"] .input-group select option { background: #fff; }
+
+.theme-toggle { position: absolute; top: 50%; right: 32px; transform: translateY(-50%); z-index: 10; display: flex; align-items: center; gap: 10px; }
+.theme-toggle-label { font-size: 0.78rem; color: rgba(255,255,255,0.6); font-weight: 500; }
+.theme-switch { position: relative; width: 52px; height: 28px; cursor: pointer; }
+.theme-switch input { opacity: 0; width: 0; height: 0; }
+.theme-switch .slider { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.15); border-radius: 28px; transition: 0.3s; border: 1px solid rgba(255,255,255,0.2); }
+.theme-switch .slider::before { content: ''; position: absolute; height: 20px; width: 20px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: 0.3s; box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
+.theme-switch input:checked + .slider { background: rgba(255,255,255,0.3); }
+.theme-switch input:checked + .slider::before { transform: translateX(24px); }
+.theme-icon { font-size: 1.1rem; line-height: 1; }
+
+.guide-section { margin-bottom: 32px; }
+.guide-section h3 { font-family: var(--serif); font-size: 1.25rem; color: var(--accent); margin-bottom: 12px; font-weight: 400; }
+.guide-step { display: flex; gap: 16px; margin-bottom: 16px; padding: 16px; background: var(--bg2); border-radius: 10px; border: 1px solid var(--border); }
+.guide-step-num { flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; }
+.guide-step-content { flex: 1; }
+.guide-step-content h4 { font-size: 0.95rem; color: var(--text); margin-bottom: 4px; font-weight: 600; }
+.guide-step-content p { font-size: 0.84rem; color: var(--text-dim); line-height: 1.6; }
+.guide-tab-card { padding: 20px; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 12px; }
+.guide-tab-card h4 { font-size: 0.95rem; color: var(--text); margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+.guide-tab-card h4 .gtag { display: inline-flex; padding: 2px 10px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+.guide-tab-card p { font-size: 0.84rem; color: var(--text-dim); line-height: 1.6; }
+.guide-metric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+.guide-metric { padding: 12px 16px; background: var(--card); border: 1px solid var(--border); border-radius: 8px; }
+.guide-metric dt { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); font-weight: 500; }
+.guide-metric dd { font-size: 0.88rem; color: var(--text); margin-top: 2px; font-weight: 500; }
+@media (max-width: 768px) { .guide-metric-grid { grid-template-columns: 1fr; } .theme-toggle-label { display: none; } }
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+body { font-family: var(--sans); background: var(--bg); color: var(--text); line-height: 1.6; min-height: 100vh; }
+
+.site-header { background: linear-gradient(135deg, #0f0a2e 0%, #1a1040 50%, #0f0a2e 100%); border-bottom: 1px solid var(--border); padding: 32px 0; position: relative; overflow: hidden; }
+.site-header::before { content:''; position:absolute; top:-50%; left:-50%; width:200%; height:200%; background: radial-gradient(ellipse at 30% 50%, rgba(129,140,248,0.06) 0%, transparent 50%), radial-gradient(ellipse at 70% 50%, rgba(56,189,248,0.05) 0%, transparent 50%); pointer-events:none; }
+.header-inner { max-width: 1400px; margin: 0 auto; padding: 0 32px; position: relative; z-index:1; }
+.header-inner h1 { font-family: var(--serif); font-size: 2.8rem; font-weight: 400; letter-spacing: -0.02em; color: #fff; }
+.header-inner h1 span { color: var(--accent); }
+.header-sub { font-size: 1.05rem; color: var(--text-dim); margin-top: 8px; font-weight: 300; }
+.header-badges { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+.badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 14px; border-radius: 100px; font-size: 0.75rem; font-weight: 500; letter-spacing: 0.02em; border: 1px solid var(--border); background: rgba(255,255,255,0.03); color: var(--text-dim); }
+.badge .dot { width: 6px; height: 6px; border-radius: 50%; }
+
+.container { max-width: 1400px; margin: 0 auto; padding: 32px; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+
+.card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; transition: border-color 0.2s; }
+.card:hover { border-color: var(--border-light); }
+.card-title { font-family: var(--serif); font-size: 1.35rem; margin-bottom: 16px; color: #fff; display: flex; align-items: center; gap: 10px; }
+.card-title .icon { font-size: 1.1rem; }
+
+.stat-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; text-align: center; position: relative; overflow: hidden; }
+.stat-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; }
+.stat-card.blue::before { background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+.stat-card.green::before { background: linear-gradient(90deg, var(--accent3), #22d3ee); }
+.stat-card.amber::before { background: linear-gradient(90deg, var(--warn), var(--orange)); }
+.stat-card.red::before { background: linear-gradient(90deg, var(--danger), var(--pink)); }
+.stat-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 8px; font-weight: 500; }
+.stat-value { font-family: var(--serif); font-size: 2rem; color: #fff; font-weight: 400; }
+.stat-sub { font-size: 0.8rem; color: var(--text-dim); margin-top: 4px; }
+
+.input-group { margin-bottom: 16px; }
+.input-group label { display: block; font-size: 0.8rem; color: var(--text-dim); margin-bottom: 6px; font-weight: 500; letter-spacing: 0.02em; }
+.input-group input, .input-group select { width: 100%; padding: 10px 14px; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: var(--sans); font-size: 0.9rem; outline: none; transition: border-color 0.2s; }
+.input-group input:focus, .input-group select:focus { border-color: var(--accent); }
+.input-group select option { background: var(--bg2); }
+.input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.input-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+.slider-group { margin-bottom: 16px; }
+.slider-group label { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-dim); margin-bottom: 6px; font-weight: 500; }
+.slider-group label span { color: var(--accent); font-family: var(--sans); }
+input[type="range"] { -webkit-appearance: none; width: 100%; height: 6px; border-radius: 3px; background: var(--bg2); outline: none; border: 1px solid var(--border); }
+input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--accent); cursor: pointer; border: 2px solid var(--bg); box-shadow: 0 0 8px rgba(129,140,248,0.3); }
+
+.tabs { display: flex; gap: 4px; background: var(--bg2); border-radius: 10px; padding: 4px; margin-bottom: 24px; border: 1px solid var(--border); overflow-x: auto; }
+.tab { padding: 10px 20px; border-radius: 8px; font-size: 0.85rem; font-weight: 500; color: var(--text-dim); cursor: pointer; transition: all 0.2s; border: none; background: none; white-space: nowrap; font-family: var(--sans); }
+.tab:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+.tab.active { background: var(--card); color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+.tab-content { display: none; }
+.tab-content.active { display: block; animation: fadeIn 0.3s; }
+@keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+.scenario-bar { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+.scenario-pill { padding: 8px 18px; border-radius: 100px; font-size: 0.8rem; font-weight: 500; cursor: pointer; transition: all 0.2s; border: 1px solid var(--border); background: transparent; color: var(--text-dim); font-family: var(--sans); }
+.scenario-pill:hover { border-color: var(--text-dim); }
+.scenario-pill.active-opt { background: rgba(52,211,153,0.12); border-color: var(--accent3); color: var(--accent3); }
+.scenario-pill.active-base { background: rgba(129,140,248,0.12); border-color: var(--accent); color: var(--accent); }
+.scenario-pill.active-pess { background: rgba(248,113,113,0.12); border-color: var(--danger); color: var(--danger); }
+
+.chart-container { position: relative; width: 100%; height: 360px; }
+.chart-container-sm { position: relative; width: 100%; height: 280px; }
+
+.data-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+.data-table th { background: var(--bg2); color: var(--text-dim); font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.72rem; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); position: sticky; top:0; }
+.data-table td { padding: 10px 14px; border-bottom: 1px solid rgba(42,58,82,0.5); }
+.data-table tr:hover td { background: rgba(129,140,248,0.03); }
+.data-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.table-scroll { max-height: 500px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius); }
+
+.section-header { margin: 40px 0 24px; }
+.section-header h2 { font-family: var(--serif); font-size: 1.8rem; color: #fff; font-weight: 400; }
+.section-header p { color: var(--text-dim); font-size: 0.9rem; margin-top: 4px; }
+.divider { width: 48px; height: 3px; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 2px; margin-top: 12px; }
+
+.burden-bar { display: flex; height: 32px; border-radius: 8px; overflow: hidden; margin: 12px 0; }
+.burden-bar div { display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 600; color: #fff; transition: width 0.5s ease; min-width: 0; }
+.burden-legend { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 8px; }
+.burden-legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: var(--text-dim); }
+.burden-legend-item .swatch { width: 10px; height: 10px; border-radius: 3px; }
+
+@media (max-width: 1100px) { .grid-2 { grid-template-columns: 1fr; } .grid-3 { grid-template-columns: 1fr; } }
+@media (max-width: 768px) { .grid-4 { grid-template-columns: 1fr 1fr; } .header-inner h1 { font-size: 2rem; } .container { padding: 16px; } .input-row, .input-row-3 { grid-template-columns: 1fr; } }
+
+.info-tip { display: inline-block; width: 16px; height: 16px; border-radius: 50%; background: var(--border); color: var(--text-dim); font-size: 0.65rem; text-align: center; line-height: 16px; cursor: help; position: relative; font-weight: 700; margin-left: 4px; }
+.info-tip:hover::after { content: attr(data-tip); position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--bg2); border: 1px solid var(--border); color: var(--text); padding: 8px 12px; border-radius: 8px; font-size: 0.75rem; font-weight: 400; white-space: nowrap; z-index: 99; max-width: 280px; white-space: normal; box-shadow: var(--shadow); }
+
+.methodology { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-top: 24px; font-size: 0.82rem; color: var(--text-dim); line-height: 1.7; }
+.methodology h4 { color: var(--text); margin-bottom: 8px; font-size: 0.9rem; }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="theme-toggle">
+      <span class="theme-icon">&#9790;</span>
+      <label class="theme-switch"><input type="checkbox" id="themeToggle" onchange="toggleTheme()"><span class="slider"></span></label>
+      <span class="theme-icon">&#9788;</span>
+      <span class="theme-toggle-label" id="themeLabel">Light</span>
+    </div>
+    <h1>CKD <span>Burden</span> Calculator</h1>
+    <p class="header-sub">Chronic Kidney Disease: economic, health & workforce impact modeling across 12 countries with stage-based projections</p>
+    <div class="header-badges">
+      <span class="badge"><span class="dot" style="background:var(--accent3)"></span> GBD 2023</span>
+      <span class="badge"><span class="dot" style="background:var(--accent)"></span> ISN-GKHA</span>
+      <span class="badge"><span class="dot" style="background:var(--accent2)"></span> USRDS</span>
+      <span class="badge"><span class="dot" style="background:var(--warn)"></span> Hybrid Projection Model</span>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="tabs" id="mainTabs">
+    <button class="tab active" onclick="switchTab('guide',this)">&#128214; Guide</button>
+    <button class="tab" onclick="switchTab('dashboard',this)">Dashboard</button>
+    <button class="tab" onclick="switchTab('projections',this)">Projections &amp; Scenarios</button>
+    <button class="tab" onclick="switchTab('economic',this)">Economic Burden</button>
+    <button class="tab" onclick="switchTab('workforce',this)">Workforce &amp; Societal</button>
+    <button class="tab" onclick="switchTab('country',this)">Country Comparison</button>
+    <button class="tab" onclick="switchTab('methodology',this)">Methodology</button>
+  </div>
+
+  <!-- ======== GUIDE ======== -->
+  <div class="tab-content active" id="tab-guide">
+    <div class="section-header">
+      <h2>How to Use This Calculator</h2>
+      <p>A complete guide to modeling CKD burden, from early stages through ESRD and dialysis</p>
+      <div class="divider"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="icon">&#127919;</span> Who Is This For?</div>
+      <div class="methodology" style="margin-top:0">
+        <p>This tool is designed for <strong>nephrologists, public health researchers, policy analysts, healthcare economists, and NGO professionals</strong> who need to understand and communicate the multi-dimensional burden of chronic kidney disease at national or global scale. CKD is the 11th leading cause of death globally and rising — with 90% of cases undiagnosed. This calculator models prevalence, staging, dialysis burden, economic costs, workforce impact, and future projections using research-backed defaults for 12 countries.</p>
+      </div>
+    </div>
+
+    <div class="guide-section" style="margin-top:28px">
+      <h3>Quick Start (3 Steps)</h3>
+      <div class="guide-step">
+        <div class="guide-step-num">1</div>
+        <div class="guide-step-content">
+          <h4>Select a Country</h4>
+          <p>Go to the <strong>Dashboard</strong> tab and pick a country from the dropdown. This loads research-backed defaults for population, CKD prevalence, dialysis patients, per-patient costs by stage, wages, DALY rates, and projection parameters sourced from GBD 2023, ISN-GKHA, USRDS, and country-specific studies.</p>
+        </div>
+      </div>
+      <div class="guide-step">
+        <div class="guide-step-num">2</div>
+        <div class="guide-step-content">
+          <h4>Customize Parameters (Optional)</h4>
+          <p>Override any default to model a specific region or intervention. Adjust dialysis cost, undiagnosed rate, stage distribution, or ESRD proportion to simulate screening programs or policy changes. "Custom Values" preserves your manual inputs.</p>
+        </div>
+      </div>
+      <div class="guide-step">
+        <div class="guide-step-num">3</div>
+        <div class="guide-step-content">
+          <h4>Explore the Tabs</h4>
+          <p>Each tab presents a different dimension of the CKD burden. All charts and numbers are live-linked to the Dashboard inputs. The stage-based cost model captures the dramatic cost escalation from early CKD ($1,000–5,000/yr) to dialysis ($40,000–120,000/yr).</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="guide-section">
+      <h3>Key Metrics Glossary</h3>
+      <div class="guide-metric-grid">
+        <div class="guide-metric"><dt>eGFR</dt><dd>Estimated Glomerular Filtration Rate: kidney function measure, lower = worse</dd></div>
+        <div class="guide-metric"><dt>ESRD</dt><dd>End-Stage Renal Disease: Stage 5 CKD requiring dialysis or transplant</dd></div>
+        <div class="guide-metric"><dt>KRT pmp</dt><dd>Kidney Replacement Therapy per million population (access metric)</dd></div>
+        <div class="guide-metric"><dt>DALY</dt><dd>Disability-Adjusted Life Year: 1 DALY = 1 year of healthy life lost</dd></div>
+        <div class="guide-metric"><dt>Catastrophic Expenditure</dt><dd>Health spending exceeding 10% of household income</dd></div>
+        <div class="guide-metric"><dt>Presenteeism</dt><dd>Working while sick at reduced productivity; costs 3x more than absenteeism</dd></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======== DASHBOARD ======== -->
+  <div class="tab-content" id="tab-dashboard">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title"><span class="icon">&#9881;</span> Model Parameters</div>
+        <div class="input-group">
+          <label>Country / Region Preset</label>
+          <select id="countrySelect" onchange="loadCountry()">
+            <option value="custom">Custom Values</option>
+            <option value="IN" selected>India</option>
+            <option value="US">United States</option>
+            <option value="CN">China</option>
+            <option value="UK">United Kingdom</option>
+            <option value="DE">Germany</option>
+            <option value="JP">Japan</option>
+            <option value="BR">Brazil</option>
+            <option value="NG">Nigeria</option>
+            <option value="ZA">South Africa</option>
+            <option value="MX">Mexico</option>
+            <option value="ID">Indonesia</option>
+            <option value="KR">South Korea</option>
+          </select>
+        </div>
+        <div class="input-row">
+          <div class="input-group">
+            <label>Total Population (millions)</label>
+            <input type="number" id="population" value="1428" step="1" onchange="recalc()">
+          </div>
+          <div class="input-group">
+            <label>CKD Prevalence (%)<span class="info-tip" data-tip="All stages, adults 20+, GBD 2023">?</span></label>
+            <input type="number" id="prevalence" value="15" step="0.1" onchange="recalc()">
+          </div>
+        </div>
+        <div class="input-row">
+          <div class="input-group">
+            <label>Undiagnosed (%)<span class="info-tip" data-tip="90% globally; proportion of CKD patients unaware of their condition">?</span></label>
+            <input type="number" id="undiagnosed" value="90" step="1" onchange="recalc()">
+          </div>
+          <div class="input-group">
+            <label>ESRD / Dialysis Patients</label>
+            <input type="number" id="dialysisPatients" value="250000" step="1000" onchange="recalc()">
+          </div>
+        </div>
+        <div class="input-row">
+          <div class="input-group">
+            <label>Early CKD Cost/Patient/Yr (USD)<span class="info-tip" data-tip="Stages 1-3a, pre-dialysis management costs">?</span></label>
+            <input type="number" id="earlyCost" value="350" step="10" onchange="recalc()">
+          </div>
+          <div class="input-group">
+            <label>Dialysis Cost/Patient/Yr (USD)</label>
+            <input type="number" id="dialysisCost" value="5000" step="100" onchange="recalc()">
+          </div>
+        </div>
+        <div class="input-row">
+          <div class="input-group">
+            <label>GDP Per Capita (USD)</label>
+            <input type="number" id="gdpPerCapita" value="2500" step="100" onchange="recalc()">
+          </div>
+          <div class="input-group">
+            <label>Avg Annual Wage (USD)</label>
+            <input type="number" id="avgWage" value="2100" step="100" onchange="recalc()">
+          </div>
+        </div>
+        <div class="input-row">
+          <div class="input-group">
+            <label>Working-Age Population (%)</label>
+            <input type="number" id="workingAgePct" value="67" step="1" onchange="recalc()">
+          </div>
+          <div class="input-group">
+            <label>Transplants per Year</label>
+            <input type="number" id="transplants" value="15000" step="100" onchange="recalc()">
+          </div>
+        </div>
+        <div class="slider-group">
+          <label>Diabetes-Caused CKD (%) <span id="dmCkdVal">40</span></label>
+          <input type="range" id="dmCkd" min="10" max="60" value="40" oninput="document.getElementById('dmCkdVal').textContent=this.value; recalc()">
+        </div>
+        <div class="slider-group">
+          <label>Hypertension-Caused CKD (%) <span id="htnCkdVal">25</span></label>
+          <input type="range" id="htnCkd" min="5" max="40" value="25" oninput="document.getElementById('htnCkdVal').textContent=this.value; recalc()">
+        </div>
+        <div class="slider-group">
+          <label>Caregiver Burden (hrs/wk per dialysis patient) <span id="careHrsVal">9</span></label>
+          <input type="range" id="careHrs" min="0" max="60" value="9" oninput="document.getElementById('careHrsVal').textContent=this.value; recalc()">
+        </div>
+      </div>
+
+      <div>
+        <div class="grid-2" style="margin-bottom:24px">
+          <div class="stat-card blue">
+            <div class="stat-label">CKD Population</div>
+            <div class="stat-value" id="statPop">—</div>
+            <div class="stat-sub" id="statPopSub">—</div>
+          </div>
+          <div class="stat-card amber">
+            <div class="stat-label">Undiagnosed</div>
+            <div class="stat-value" id="statUndiag">—</div>
+            <div class="stat-sub" id="statUndiagSub">—</div>
+          </div>
+          <div class="stat-card green">
+            <div class="stat-label">Total Annual Cost</div>
+            <div class="stat-value" id="statCost">—</div>
+            <div class="stat-sub" id="statCostSub">—</div>
+          </div>
+          <div class="stat-card red">
+            <div class="stat-label">DALYs Lost</div>
+            <div class="stat-value" id="statDaly">—</div>
+            <div class="stat-sub" id="statDalySub">years of healthy life</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title"><span class="icon">&#128200;</span> Cost Breakdown</div>
+          <div class="burden-bar" id="burdenBar"></div>
+          <div class="burden-legend" id="burdenLegend"></div>
+          <div class="chart-container-sm" style="margin-top:16px">
+            <canvas id="costBreakdownChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-4" style="margin-top:24px">
+      <div class="stat-card blue">
+        <div class="stat-label">On Dialysis</div>
+        <div class="stat-value" id="statDialysis">—</div>
+        <div class="stat-sub">requiring kidney replacement</div>
+      </div>
+      <div class="stat-card amber">
+        <div class="stat-label">Transplants/Year</div>
+        <div class="stat-value" id="statTransplant">—</div>
+        <div class="stat-sub" id="statTransplantSub">—</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-label">Workforce Impact</div>
+        <div class="stat-value" id="statWork">—</div>
+        <div class="stat-sub">productivity loss/year</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-label">Caregiver Hours</div>
+        <div class="stat-value" id="statCare">—</div>
+        <div class="stat-sub">informal hrs/year</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======== PROJECTIONS ======== -->
+  <div class="tab-content" id="tab-projections">
+    <div class="section-header">
+      <h2>Future Burden Projections</h2>
+      <p>CKD is projected to become the 5th leading cause of death globally by 2040</p>
+      <div class="divider"></div>
+    </div>
+    <div class="scenario-bar">
+      <button class="scenario-pill active-opt" onclick="setScenario('optimistic', this)">&#x1F7E2; Optimistic (Screening + SGLT2i)</button>
+      <button class="scenario-pill active-base" onclick="setScenario('baseline', this)">&#x1F535; Baseline (Current Trends)</button>
+      <button class="scenario-pill active-pess" onclick="setScenario('pessimistic', this)">&#x1F534; Pessimistic (Rising Diabetes/HTN)</button>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">CKD Population Projections</div>
+        <div class="chart-container"><canvas id="projectionChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Cumulative Economic Burden</div>
+        <div class="chart-container"><canvas id="costProjectionChart"></canvas></div>
+      </div>
+    </div>
+    <div class="grid-3" style="margin-top:24px">
+      <div class="stat-card blue">
+        <div class="stat-label">5-Year Projection (2031)</div>
+        <div class="stat-value" id="proj5yr">—</div>
+        <div class="stat-sub" id="proj5yrCost">—</div>
+      </div>
+      <div class="stat-card amber">
+        <div class="stat-label">15-Year Projection (2041)</div>
+        <div class="stat-value" id="proj15yr">—</div>
+        <div class="stat-sub" id="proj15yrCost">—</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-label">30-Year Projection (2056)</div>
+        <div class="stat-value" id="proj30yr">—</div>
+        <div class="stat-sub" id="proj30yrCost">—</div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:24px">
+      <div class="card-title">Projection Parameters</div>
+      <div class="input-row-3">
+        <div class="slider-group">
+          <label>Prevalence CAGR (%) <span id="cagrVal">1.4</span></label>
+          <input type="range" id="cagr" min="0.5" max="4" value="1.4" step="0.1" oninput="document.getElementById('cagrVal').textContent=this.value; recalcProjections()">
+        </div>
+        <div class="slider-group">
+          <label>Pop. Growth Rate (%) <span id="popGrowthVal">0.8</span></label>
+          <input type="range" id="popGrowth" min="-0.5" max="3" value="0.8" step="0.1" oninput="document.getElementById('popGrowthVal').textContent=this.value; recalcProjections()">
+        </div>
+        <div class="slider-group">
+          <label>Healthcare Cost Inflation (%) <span id="costInflVal">12.1</span></label>
+          <input type="range" id="costInfl" min="2" max="18" value="12.1" step="0.5" oninput="document.getElementById('costInflVal').textContent=this.value; recalcProjections()">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======== ECONOMIC ======== -->
+  <div class="tab-content" id="tab-economic">
+    <div class="section-header">
+      <h2>Economic Burden Deep Dive</h2>
+      <p>Stage-based costs, dialysis economics, transplant ROI, and catastrophic expenditure</p>
+      <div class="divider"></div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Cost Distribution by Category</div>
+        <div class="chart-container"><canvas id="econPieChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Cost by CKD Stage (per patient/yr)</div>
+        <div class="chart-container"><canvas id="stageChart"></canvas></div>
+      </div>
+    </div>
+    <div class="grid-3" style="margin-top:24px">
+      <div class="stat-card blue">
+        <div class="stat-label">Direct Medical Costs</div>
+        <div class="stat-value" id="econDirect">—</div>
+        <div class="stat-sub">pre-dialysis + dialysis + transplant</div>
+      </div>
+      <div class="stat-card amber">
+        <div class="stat-label">Indirect Costs</div>
+        <div class="stat-value" id="econIndirect">—</div>
+        <div class="stat-sub">productivity, absenteeism, presenteeism</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-label">Catastrophic Expenditure</div>
+        <div class="stat-value" id="econCatastrophic">—</div>
+        <div class="stat-sub" id="econCatSub">dialysis families impoverished</div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:24px">
+      <div class="card-title">Dialysis vs Transplant: Cost-Effectiveness</div>
+      <div class="chart-container"><canvas id="dialysisVsTransplantChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ======== WORKFORCE ======== -->
+  <div class="tab-content" id="tab-workforce">
+    <div class="section-header">
+      <h2>Workforce &amp; Societal Impact</h2>
+      <p>Productivity loss, caregiver burden, and quality of life impact</p>
+      <div class="divider"></div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Productivity Loss Breakdown</div>
+        <div class="chart-container"><canvas id="workforceChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">DALY Components</div>
+        <div class="chart-container"><canvas id="dalyChart"></canvas></div>
+      </div>
+    </div>
+    <div class="grid-4" style="margin-top:24px">
+      <div class="stat-card blue">
+        <div class="stat-label">Dialysis Employment Rate</div>
+        <div class="stat-value">26.3%</div>
+        <div class="stat-sub">vs 81-85% general population</div>
+      </div>
+      <div class="stat-card amber">
+        <div class="stat-label">Job Loss within 6mo</div>
+        <div class="stat-value">33%</div>
+        <div class="stat-sub">of employed at dialysis start</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-label">Caregiver Burden Rate</div>
+        <div class="stat-value">68.6%</div>
+        <div class="stat-sub">of CKD caregivers affected</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-label">GDP Impact</div>
+        <div class="stat-value" id="wfGdp">—</div>
+        <div class="stat-sub">% of national GDP</div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:24px">
+      <div class="card-title">Quality of Life &amp; Comorbidity</div>
+      <div class="grid-3">
+        <div style="text-align:center; padding:16px">
+          <div style="font-size:2.4rem; font-family:var(--serif); color:var(--warn)">0.571</div>
+          <div style="font-size:0.82rem; color:var(--text-dim); margin-top:4px">Disability weight: CKD on dialysis (vs 0.024 post-transplant)</div>
+        </div>
+        <div style="text-align:center; padding:16px">
+          <div style="font-size:2.4rem; font-family:var(--serif); color:var(--danger)">20–40%</div>
+          <div style="font-size:0.82rem; color:var(--text-dim); margin-top:4px">Depression prevalence in CKD patients</div>
+        </div>
+        <div style="text-align:center; padding:16px">
+          <div style="font-size:2.4rem; font-family:var(--serif); color:var(--pink)">10–15 yrs</div>
+          <div style="font-size:0.82rem; color:var(--text-dim); margin-top:4px">Life expectancy reduction on dialysis</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======== COUNTRY COMPARISON ======== -->
+  <div class="tab-content" id="tab-country">
+    <div class="section-header">
+      <h2>Country Comparison</h2>
+      <p>Side-by-side CKD metrics across 12 countries</p>
+      <div class="divider"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">CKD Population &amp; Dialysis Cost Comparison</div>
+      <div class="chart-container" style="height:450px"><canvas id="countryCompChart"></canvas></div>
+    </div>
+    <div class="card" style="margin-top:24px">
+      <div class="card-title">Full Country Data Table</div>
+      <div class="table-scroll">
+        <table class="data-table" id="countryTable">
+          <thead><tr>
+            <th>Country</th><th>Population (M)</th><th>CKD Prev (%)</th><th>CKD (M)</th><th>Dialysis Patients</th><th>Dialysis $/yr</th><th>KRT pmp</th><th>DALYs/100K</th>
+          </tr></thead>
+          <tbody id="countryTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======== METHODOLOGY ======== -->
+  <div class="tab-content" id="tab-methodology">
+    <div class="section-header">
+      <h2>Methodology &amp; Data Sources</h2>
+      <p>Transparency in modeling assumptions and data provenance</p>
+      <div class="divider"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Projection Formula</div>
+      <div class="methodology">
+        <h4>Hybrid Compound Growth + Scenario Model</h4>
+        <p style="font-family:monospace; background:var(--bg); padding:12px; border-radius:8px; margin:12px 0; font-size:0.85rem; color:var(--accent)">
+          Projected_Cases(year) = Current_Cases &times; (1 + CAGR)<sup>years</sup> &times; Scenario_Multiplier &times; (Pop_Future / Pop_Current)
+        </p>
+        <p><strong>Scenario Multipliers:</strong> Optimistic (0.60x) assumes CKD screening in diabetics reduces ESRD by 40% and SGLT2 inhibitors delay progression significantly. Baseline (1.00x) continues current trends. Pessimistic (1.25x) accounts for rising diabetes and hypertension prevalence in LMICs.</p>
+        <p style="margin-top:8px"><strong>Stage Transition:</strong> CKD follows a Markov model: Stage 1-2 → Stage 3 at 1.26%/year; Stage 3 → Stage 4-5 at 1.21%/year; Stage 4 → Stage 5 at 94% over 5 years. These inform the stage distribution and cost escalation.</p>
+      </div>
+    </div>
+    <div class="card" style="margin-top:24px">
+      <div class="card-title">Data Sources</div>
+      <div class="methodology">
+        <p><strong>Prevalence:</strong> Global Burden of Disease Study 2023 (IHME). ISN-GKHA (International Society of Nephrology Global Kidney Health Atlas). National registry data (USRDS, UK Renal Registry, ANZDATA).</p>
+        <p style="margin-top:8px"><strong>Economic Data:</strong> USRDS Annual Data Reports. Systematic reviews of CKD cost-of-illness studies (Lancet, JASN). WHO CHOICE cost-effectiveness thresholds. Country-specific dialysis cost surveys.</p>
+        <p style="margin-top:8px"><strong>DALYs &amp; Disability Weights:</strong> GBD 2021. Disability weights: CKD Stage IV = 0.104, dialysis = 0.571, post-transplant = 0.024.</p>
+        <p style="margin-top:8px"><strong>Workforce:</strong> Meta-analyses of CKD employment outcomes. Dialysis employment rate of 26.3% from systematic reviews. Caregiver burden from UK and Australian cohort studies.</p>
+      </div>
+    </div>
+    <div class="card" style="margin-top:24px">
+      <div class="card-title">Limitations &amp; Caveats</div>
+      <div class="methodology">
+        <p>CKD prevalence estimates vary widely by detection method (eGFR vs albuminuria vs both). Stage distribution defaults are global averages; country-specific registries may differ. Dialysis costs represent enormous variation even within countries (peritoneal vs hemodialysis, public vs private). The 90% undiagnosed rate is a global estimate — high-income countries with screening programs may have lower rates. Transplant data reflects performed transplants, not demand (which far exceeds supply in most countries).</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const COUNTRIES = {
+  IN: { name:"India", pop:1428, prev:15, undiag:90, dialysis:250000, transplants:15000, earlyCost:350, dialysisCost:5000, gdp:2500, wage:2100, workPop:67, daly:459, krt:175, cagr:1.4, popGr:0.8, costInfl:12.1, catExp:40, dmCkd:40, htnCkd:25, careHrs:9 },
+  US: { name:"United States", pop:335, prev:14, undiag:40, dialysis:562000, transplants:27000, earlyCost:15000, dialysisCost:90000, gdp:76000, wage:63000, workPop:62, daly:200, krt:2219, cagr:1.2, popGr:0.5, costInfl:8.7, catExp:8, dmCkd:45, htnCkd:28, careHrs:6 },
+  CN: { name:"China", pop:1412, prev:11, undiag:90, dialysis:850000, transplants:12000, earlyCost:1200, dialysisCost:15000, gdp:12700, wage:9500, workPop:70, daly:250, krt:200, cagr:1.5, popGr:0.1, costInfl:12.3, catExp:20, dmCkd:35, htnCkd:20, careHrs:7 },
+  UK: { name:"United Kingdom", pop:67, prev:14.5, undiag:50, dialysis:30000, transplants:2200, earlyCost:5000, dialysisCost:40000, gdp:46000, wage:38000, workPop:63, daly:120, krt:953, cagr:1.0, popGr:0.3, costInfl:8.3, catExp:3, dmCkd:40, htnCkd:25, careHrs:9 },
+  DE: { name:"Germany", pop:84, prev:14.5, undiag:55, dialysis:80000, transplants:2886, earlyCost:6000, dialysisCost:50000, gdp:52000, wage:44000, workPop:64, daly:180, krt:1280, cagr:1.0, popGr:-0.1, costInfl:8.3, catExp:3, dmCkd:40, htnCkd:25, careHrs:5 },
+  JP: { name:"Japan", pop:124, prev:12.5, undiag:50, dialysis:347474, transplants:1800, earlyCost:5500, dialysisCost:45000, gdp:34000, wage:30000, workPop:59, daly:180, krt:2781, cagr:0.8, popGr:-0.5, costInfl:8.3, catExp:2, dmCkd:35, htnCkd:20, careHrs:6 },
+  BR: { name:"Brazil", pop:216, prev:13.5, undiag:80, dialysis:155000, transplants:6200, earlyCost:800, dialysisCost:12000, gdp:9800, wage:5800, workPop:69, daly:280, krt:750, cagr:1.5, popGr:0.5, costInfl:10.0, catExp:25, dmCkd:40, htnCkd:25, careHrs:7 },
+  NG: { name:"Nigeria", pop:224, prev:16, undiag:95, dialysis:5000, transplants:150, earlyCost:100, dialysisCost:3400, gdp:2200, wage:1500, workPop:54, daly:350, krt:25, cagr:2.0, popGr:2.4, costInfl:12.1, catExp:70, dmCkd:30, htnCkd:30, careHrs:12 },
+  ZA: { name:"South Africa", pop:60, prev:15, undiag:85, dialysis:12000, transplants:500, earlyCost:400, dialysisCost:8000, gdp:6000, wage:4500, workPop:65, daly:300, krt:200, cagr:1.8, popGr:0.8, costInfl:12.1, catExp:35, dmCkd:35, htnCkd:25, careHrs:9 },
+  MX: { name:"Mexico", pop:129, prev:15.5, undiag:80, dialysis:90000, transplants:3000, earlyCost:600, dialysisCost:10000, gdp:11000, wage:6500, workPop:67, daly:350, krt:700, cagr:1.6, popGr:0.7, costInfl:10.0, catExp:30, dmCkd:45, htnCkd:25, careHrs:9 },
+  ID: { name:"Indonesia", pop:278, prev:13, undiag:90, dialysis:107000, transplants:1500, earlyCost:200, dialysisCost:4000, gdp:4800, wage:3200, workPop:68, daly:320, krt:150, cagr:1.8, popGr:0.8, costInfl:12.3, catExp:40, dmCkd:35, htnCkd:25, careHrs:10 },
+  KR: { name:"South Korea", pop:52, prev:9, undiag:45, dialysis:107015, transplants:2200, earlyCost:5000, dialysisCost:40000, gdp:33000, wage:28000, workPop:72, daly:200, krt:2100, cagr:1.0, popGr:-0.2, costInfl:12.3, catExp:5, dmCkd:40, htnCkd:25, careHrs:5 },
+};
+
+let charts = {};
+let activeScenarios = { optimistic: true, baseline: true, pessimistic: true };
+
+function toggleTheme() {
+  const isLight = document.getElementById('themeToggle').checked;
+  document.documentElement.setAttribute('data-theme', isLight ? 'light' : 'dark');
+  document.getElementById('themeLabel').textContent = isLight ? 'Dark' : 'Light';
+  updateChartColors(isLight);
+}
+function updateChartColors(isLight) {
+  const textColor = isLight ? '#475569' : '#8899b0';
+  const gridColor = isLight ? 'rgba(148,163,184,0.25)' : 'rgba(42,58,82,0.4)';
+  const tickColor = isLight ? '#64748b' : '#5a6d85';
+  chartDefaults.plugins.legend.labels.color = textColor;
+  chartDefaults.scales.x.ticks.color = tickColor;
+  chartDefaults.scales.x.grid.color = gridColor;
+  chartDefaults.scales.y.ticks.color = tickColor;
+  chartDefaults.scales.y.grid.color = gridColor;
+  recalc();
+}
+
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  if (btn) btn.classList.add('active');
+  setTimeout(() => { Object.values(charts).forEach(c => { if(c) c.resize(); }); }, 50);
+}
+
+function loadCountry() {
+  const code = document.getElementById('countrySelect').value;
+  if (code === 'custom') return;
+  const c = COUNTRIES[code];
+  document.getElementById('population').value = c.pop;
+  document.getElementById('prevalence').value = c.prev;
+  document.getElementById('undiagnosed').value = c.undiag;
+  document.getElementById('dialysisPatients').value = c.dialysis;
+  document.getElementById('earlyCost').value = c.earlyCost;
+  document.getElementById('dialysisCost').value = c.dialysisCost;
+  document.getElementById('gdpPerCapita').value = c.gdp;
+  document.getElementById('avgWage').value = c.wage;
+  document.getElementById('workingAgePct').value = c.workPop;
+  document.getElementById('transplants').value = c.transplants;
+  document.getElementById('dmCkd').value = c.dmCkd;
+  document.getElementById('dmCkdVal').textContent = c.dmCkd;
+  document.getElementById('htnCkd').value = c.htnCkd;
+  document.getElementById('htnCkdVal').textContent = c.htnCkd;
+  document.getElementById('careHrs').value = c.careHrs;
+  document.getElementById('careHrsVal').textContent = c.careHrs;
+  document.getElementById('cagr').value = c.cagr;
+  document.getElementById('cagrVal').textContent = c.cagr;
+  document.getElementById('popGrowth').value = c.popGr;
+  document.getElementById('popGrowthVal').textContent = c.popGr;
+  document.getElementById('costInfl').value = c.costInfl;
+  document.getElementById('costInflVal').textContent = c.costInfl;
+  recalc();
+}
+
+function fmt(n, dec=1) {
+  if (n >= 1e12) return (n/1e12).toFixed(dec) + 'T';
+  if (n >= 1e9) return (n/1e9).toFixed(dec) + 'B';
+  if (n >= 1e6) return (n/1e6).toFixed(dec) + 'M';
+  if (n >= 1e3) return (n/1e3).toFixed(dec) + 'K';
+  return n.toFixed(dec);
+}
+
+function recalc() {
+  const pop = parseFloat(document.getElementById('population').value) * 1e6;
+  const prev = parseFloat(document.getElementById('prevalence').value) / 100;
+  const undiag = parseFloat(document.getElementById('undiagnosed').value) / 100;
+  const dialysisPatients = parseFloat(document.getElementById('dialysisPatients').value);
+  const earlyCost = parseFloat(document.getElementById('earlyCost').value);
+  const dialysisCost = parseFloat(document.getElementById('dialysisCost').value);
+  const gdp = parseFloat(document.getElementById('gdpPerCapita').value);
+  const wage = parseFloat(document.getElementById('avgWage').value);
+  const workPop = parseFloat(document.getElementById('workingAgePct').value) / 100;
+  const transplants = parseFloat(document.getElementById('transplants').value);
+  const careHrs = parseFloat(document.getElementById('careHrs').value);
+  const dmCkd = parseFloat(document.getElementById('dmCkd').value) / 100;
+  const htnCkd = parseFloat(document.getElementById('htnCkd').value) / 100;
+
+  const ckdTotal = pop * prev;
+  const undiagnosed = ckdTotal * undiag;
+  const preDialysisCkd = ckdTotal - dialysisPatients;
+
+  // Direct costs
+  const directPreDialysis = preDialysisCkd * earlyCost;
+  const directDialysis = dialysisPatients * dialysisCost;
+  const transplantCostPerYr = dialysisCost * 0.4; // maintenance ~40% of dialysis
+  const directTransplant = transplants * dialysisCost * 3; // first-year cost ~3x dialysis
+  const totalDirect = directPreDialysis + directDialysis + directTransplant;
+
+  // Indirect costs
+  const workingCkd = preDialysisCkd * workPop;
+  const workingDialysis = dialysisPatients * 0.263; // only 26.3% employed
+  const absentDaysCkd = workingCkd * 10; // ~10 excess sick days pre-dialysis
+  const absentDaysDialysis = workingDialysis * 74; // 74 excess sick days
+  const absentCost = (absentDaysCkd + absentDaysDialysis) * (wage / 250);
+  const presentCostCkd = workingCkd * 0.10 * wage; // 10% presenteeism
+  const presentCostDialysis = workingDialysis * 0.40 * wage; // 40%+ unable
+  const presentCost = presentCostCkd + presentCostDialysis;
+  const particLoss = preDialysisCkd * workPop * 0.15; // 15% reduction pre-dialysis
+  const particCost = particLoss * wage;
+  const totalIndirect = absentCost + presentCost + particCost;
+
+  // Caregiver
+  const caregiverHrs = dialysisPatients * careHrs * 52;
+  const caregiverCost = caregiverHrs * (wage / 2000);
+
+  const totalCost = totalDirect + totalIndirect + caregiverCost;
+
+  // DALYs
+  const code = document.getElementById('countrySelect').value;
+  const dalyRate = (code !== 'custom' && COUNTRIES[code]) ? COUNTRIES[code].daly : 400;
+  const totalDalys = (pop / 100000) * dalyRate;
+  const catExpRate = (code !== 'custom' && COUNTRIES[code]) ? COUNTRIES[code].catExp : 40;
+
+  // Dashboard
+  document.getElementById('statPop').textContent = fmt(ckdTotal);
+  document.getElementById('statPopSub').textContent = (prev*100).toFixed(1) + '% prevalence';
+  document.getElementById('statUndiag').textContent = fmt(undiagnosed);
+  document.getElementById('statUndiagSub').textContent = (undiag*100).toFixed(0) + '% of CKD patients';
+  document.getElementById('statCost').textContent = '$' + fmt(totalCost);
+  document.getElementById('statCostSub').textContent = 'Direct $' + fmt(totalDirect) + ' + Indirect $' + fmt(totalIndirect);
+  document.getElementById('statDaly').textContent = fmt(totalDalys);
+  document.getElementById('statDialysis').textContent = fmt(dialysisPatients);
+  document.getElementById('statTransplant').textContent = fmt(transplants);
+  document.getElementById('statTransplantSub').textContent = 'KRT pmp: ' + ((code !== 'custom' && COUNTRIES[code]) ? COUNTRIES[code].krt : '—');
+  document.getElementById('statWork').textContent = '$' + fmt(totalIndirect);
+  document.getElementById('statCare').textContent = fmt(caregiverHrs);
+
+  // Burden bar
+  const segments = [
+    { label: 'Pre-dialysis care', val: directPreDialysis, color: '#818cf8' },
+    { label: 'Dialysis', val: directDialysis, color: '#38bdf8' },
+    { label: 'Transplant', val: directTransplant, color: '#34d399' },
+    { label: 'Absenteeism', val: absentCost, color: '#fbbf24' },
+    { label: 'Presenteeism', val: presentCost, color: '#fb923c' },
+    { label: 'Reduced participation', val: particCost, color: '#f87171' },
+    { label: 'Caregiver cost', val: caregiverCost, color: '#f472b6' },
+  ];
+  const barHtml = segments.map(s => {
+    const pct = (s.val / totalCost * 100);
+    return `<div style="width:${pct}%; background:${s.color}" title="${s.label}: $${fmt(s.val)} (${pct.toFixed(1)}%)">${pct > 8 ? pct.toFixed(0)+'%' : ''}</div>`;
+  }).join('');
+  document.getElementById('burdenBar').innerHTML = barHtml;
+  document.getElementById('burdenLegend').innerHTML = segments.map(s =>
+    `<div class="burden-legend-item"><div class="swatch" style="background:${s.color}"></div>${s.label}: $${fmt(s.val)}</div>`
+  ).join('');
+
+  updateCostBreakdownChart(segments);
+
+  // Economic tab
+  document.getElementById('econDirect').textContent = '$' + fmt(totalDirect);
+  document.getElementById('econIndirect').textContent = '$' + fmt(totalIndirect);
+  const catFamilies = dialysisPatients * catExpRate / 100;
+  document.getElementById('econCatastrophic').textContent = fmt(catFamilies) + ' families';
+  document.getElementById('econCatSub').textContent = catExpRate + '% catastrophic rate among dialysis patients';
+
+  updateEconCharts(totalDirect, totalIndirect, caregiverCost, earlyCost, dialysisCost);
+  updateWorkforceCharts(absentCost, presentCost, particCost, caregiverCost, totalDalys);
+
+  const gdpImpact = totalCost / (pop * gdp) * 100;
+  document.getElementById('wfGdp').textContent = gdpImpact.toFixed(2) + '%';
+
+  recalcProjections();
+  updateCountryTab();
+}
+
+function destroyChart(key) { if (charts[key]) { charts[key].destroy(); charts[key] = null; } }
+
+let chartDefaults = {
+  responsive: true, maintainAspectRatio: false,
+  plugins: { legend: { labels: { color: '#8899b0', font: { family: "'DM Sans'" }, boxWidth: 12, padding: 12 } } },
+  scales: { x: { ticks: { color: '#5a6d85', font: { family: "'DM Sans'", size: 11 } }, grid: { color: 'rgba(42,58,82,0.4)' } },
+            y: { ticks: { color: '#5a6d85', font: { family: "'DM Sans'", size: 11 } }, grid: { color: 'rgba(42,58,82,0.4)' } } }
+};
+
+function updateCostBreakdownChart(segments) {
+  destroyChart('costBreakdown');
+  charts.costBreakdown = new Chart(document.getElementById('costBreakdownChart'), {
+    type: 'doughnut',
+    data: { labels: segments.map(s => s.label), datasets: [{ data: segments.map(s => s.val), backgroundColor: segments.map(s => s.color), borderWidth: 0 }] },
+    options: { responsive: true, maintainAspectRatio: false, cutout: '65%',
+      plugins: { legend: { position: 'right', labels: { color: '#8899b0', font: { family: "'DM Sans'", size: 11 }, boxWidth: 10, padding: 8 } } } }
+  });
+}
+
+function updateEconCharts(directTotal, indirectTotal, caregiverCost, earlyCost, dialysisCost) {
+  destroyChart('econPie');
+  charts.econPie = new Chart(document.getElementById('econPieChart'), {
+    type: 'pie',
+    data: { labels: ['Direct Medical', 'Indirect (Productivity)', 'Caregiver (Informal)'],
+      datasets: [{ data: [directTotal, indirectTotal, caregiverCost], backgroundColor: ['#818cf8', '#fbbf24', '#f472b6'], borderWidth: 0 }] },
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { color: '#8899b0', font: { family: "'DM Sans'" }, boxWidth: 10, padding: 12 } } } }
+  });
+
+  // Stage cost chart
+  const stages = [
+    { name: 'Stage 1-2', val: earlyCost, color: '#34d399' },
+    { name: 'Stage 3a', val: earlyCost * 1.8, color: '#38bdf8' },
+    { name: 'Stage 3b', val: earlyCost * 3.5, color: '#818cf8' },
+    { name: 'Stage 4', val: earlyCost * 6, color: '#fbbf24' },
+    { name: 'Stage 5\n(pre-dialysis)', val: earlyCost * 10, color: '#fb923c' },
+    { name: 'Stage 5\n(dialysis)', val: dialysisCost, color: '#f87171' },
+    { name: 'Transplant\n(year 1)', val: dialysisCost * 3, color: '#f472b6' },
+  ];
+  destroyChart('stage');
+  charts.stage = new Chart(document.getElementById('stageChart'), {
+    type: 'bar',
+    data: { labels: stages.map(s => s.name), datasets: [{ data: stages.map(s => s.val), backgroundColor: stages.map(s => s.color), borderWidth: 0, borderRadius: 6 }] },
+    options: { ...chartDefaults, plugins: { ...chartDefaults.plugins, legend: { display: false } },
+      scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, title: { display: true, text: 'Annual cost per patient (USD)', color: '#5a6d85' } } } }
+  });
+
+  // Dialysis vs Transplant 10-year comparison
+  const years = ['Year 1','Year 2','Year 3','Year 4','Year 5','Year 6','Year 7','Year 8','Year 9','Year 10'];
+  const dialysisCum = [], transplantCum = [];
+  let dCum = 0, tCum = 0;
+  const transplantYr1 = dialysisCost * 3;
+  const transplantMaint = dialysisCost * 0.25;
+  for (let i = 0; i < 10; i++) {
+    dCum += dialysisCost;
+    tCum += (i === 0) ? transplantYr1 : transplantMaint;
+    dialysisCum.push(dCum);
+    transplantCum.push(tCum);
+  }
+  destroyChart('dialysisVsTransplant');
+  charts.dialysisVsTransplant = new Chart(document.getElementById('dialysisVsTransplantChart'), {
+    type: 'line',
+    data: { labels: years, datasets: [
+      { label: 'Cumulative Dialysis Cost', data: dialysisCum, borderColor: '#f87171', backgroundColor: '#f8717118', fill: true, tension: 0.3, borderWidth: 2, pointRadius: 3 },
+      { label: 'Cumulative Transplant Cost', data: transplantCum, borderColor: '#34d399', backgroundColor: '#34d39918', fill: true, tension: 0.3, borderWidth: 2, pointRadius: 3 },
+    ]},
+    options: { ...chartDefaults, scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, title: { display: true, text: 'Cumulative cost (USD)', color: '#5a6d85' } } } }
+  });
+}
+
+function updateWorkforceCharts(absent, present, partic, caregiver, dalys) {
+  destroyChart('workforce');
+  charts.workforce = new Chart(document.getElementById('workforceChart'), {
+    type: 'bar',
+    data: { labels: ['Absenteeism', 'Presenteeism', 'Reduced\nParticipation', 'Caregiver\nProductivity'],
+      datasets: [{ data: [absent, present, partic, caregiver], backgroundColor: ['#fbbf24', '#fb923c', '#f87171', '#f472b6'], borderWidth: 0, borderRadius: 6 }] },
+    options: { ...chartDefaults, plugins: { ...chartDefaults.plugins, legend: { display: false } },
+      scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, title: { display: true, text: 'Annual cost (USD)', color: '#5a6d85' } } } }
+  });
+
+  const yllPct = 60, yldPct = 40;
+  const yll = dalys * yllPct / 100;
+  const yldPreD = dalys * yldPct / 100 * 0.3;
+  const yldDialysis = dalys * yldPct / 100 * 0.7;
+  destroyChart('daly');
+  charts.daly = new Chart(document.getElementById('dalyChart'), {
+    type: 'doughnut',
+    data: { labels: ['YLL (Premature Death)', 'YLD (Pre-dialysis CKD)', 'YLD (Dialysis)'],
+      datasets: [{ data: [yll, yldPreD, yldDialysis], backgroundColor: ['#f87171', '#818cf8', '#38bdf8'], borderWidth: 0 }] },
+    options: { responsive: true, maintainAspectRatio: false, cutout: '60%',
+      plugins: { legend: { position: 'bottom', labels: { color: '#8899b0', font: { family: "'DM Sans'" }, boxWidth: 10 } } } }
+  });
+}
+
+function setScenario(sc, el) {
+  activeScenarios[sc] = !activeScenarios[sc];
+  const cls = sc === 'optimistic' ? 'active-opt' : sc === 'baseline' ? 'active-base' : 'active-pess';
+  el.classList.toggle(cls);
+  recalcProjections();
+}
+
+function recalcProjections() {
+  const pop = parseFloat(document.getElementById('population').value) * 1e6;
+  const prev = parseFloat(document.getElementById('prevalence').value) / 100;
+  const earlyCost = parseFloat(document.getElementById('earlyCost').value);
+  const dialysisCost = parseFloat(document.getElementById('dialysisCost').value);
+  const cagr = parseFloat(document.getElementById('cagr').value) / 100;
+  const popGr = parseFloat(document.getElementById('popGrowth').value) / 100;
+  const costInfl = parseFloat(document.getElementById('costInfl').value) / 100;
+
+  const scenarios = { optimistic: 0.60, baseline: 1.0, pessimistic: 1.25 };
+  const colors = { optimistic: '#34d399', baseline: '#818cf8', pessimistic: '#f87171' };
+  const years = []; for (let y = 2026; y <= 2056; y++) years.push(y);
+
+  const datasets = [], costDatasets = [];
+  const projData = {};
+
+  Object.entries(scenarios).forEach(([name, mult]) => {
+    if (!activeScenarios[name]) return;
+    const popData = [], costData = [];
+    years.forEach(y => {
+      const t = y - 2026;
+      const futPop = pop * Math.pow(1 + popGr, t);
+      const futPrev = prev * Math.pow(1 + cagr * mult, t);
+      const cappedPrev = Math.min(futPrev, 0.30);
+      const cases = futPop * cappedPrev;
+      popData.push(cases / 1e6);
+      const avgCostPP = earlyCost * 0.95 + dialysisCost * 0.05; // ~5% on dialysis
+      const futCostPP = avgCostPP * Math.pow(1 + costInfl * 0.5, t);
+      costData.push(cases * futCostPP / 1e9);
+    });
+    projData[name] = { pop: popData, cost: costData };
+    datasets.push({ label: name.charAt(0).toUpperCase() + name.slice(1), data: popData, borderColor: colors[name], backgroundColor: colors[name] + '18', fill: name === 'baseline', tension: 0.3, borderWidth: 2, pointRadius: 0 });
+    costDatasets.push({ label: name.charAt(0).toUpperCase() + name.slice(1), data: costData, borderColor: colors[name], backgroundColor: colors[name] + '18', fill: name === 'baseline', tension: 0.3, borderWidth: 2, pointRadius: 0 });
+  });
+
+  const base = projData.baseline || projData[Object.keys(projData)[0]];
+  if (base) {
+    document.getElementById('proj5yr').textContent = base.pop[5] ? base.pop[5].toFixed(1) + 'M' : '—';
+    document.getElementById('proj5yrCost').textContent = base.cost[5] ? '$' + base.cost[5].toFixed(1) + 'B direct costs' : '—';
+    document.getElementById('proj15yr').textContent = base.pop[15] ? base.pop[15].toFixed(1) + 'M' : '—';
+    document.getElementById('proj15yrCost').textContent = base.cost[15] ? '$' + base.cost[15].toFixed(1) + 'B direct costs' : '—';
+    document.getElementById('proj30yr').textContent = base.pop[30] ? base.pop[30].toFixed(1) + 'M' : '—';
+    document.getElementById('proj30yrCost').textContent = base.cost[30] ? '$' + base.cost[30].toFixed(1) + 'B direct costs' : '—';
+  }
+
+  destroyChart('projection');
+  charts.projection = new Chart(document.getElementById('projectionChart'), {
+    type: 'line', data: { labels: years, datasets },
+    options: { ...chartDefaults, scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, title: { display: true, text: 'CKD population (millions)', color: '#5a6d85' } } } }
+  });
+  destroyChart('costProjection');
+  charts.costProjection = new Chart(document.getElementById('costProjectionChart'), {
+    type: 'line', data: { labels: years, datasets: costDatasets },
+    options: { ...chartDefaults, scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, title: { display: true, text: 'Direct cost (USD billions)', color: '#5a6d85' } } } }
+  });
+}
+
+function updateCountryTab() {
+  const entries = Object.entries(COUNTRIES).sort((a,b) => (b[1].pop * b[1].prev/100) - (a[1].pop * a[1].prev/100));
+  const tbody = document.getElementById('countryTableBody');
+  tbody.innerHTML = entries.map(([code, c]) => {
+    const ckdPop = c.pop * c.prev / 100;
+    return `<tr>
+      <td><strong>${c.name}</strong></td>
+      <td class="num">${c.pop}</td>
+      <td class="num">${c.prev}%</td>
+      <td class="num">${ckdPop.toFixed(1)}</td>
+      <td class="num">${c.dialysis.toLocaleString()}</td>
+      <td class="num">$${c.dialysisCost.toLocaleString()}</td>
+      <td class="num">${c.krt.toLocaleString()}</td>
+      <td class="num">${c.daly.toLocaleString()}</td>
+    </tr>`;
+  }).join('');
+
+  const top12 = entries.slice(0, 12);
+  destroyChart('countryComp');
+  charts.countryComp = new Chart(document.getElementById('countryCompChart'), {
+    type: 'bar',
+    data: {
+      labels: top12.map(([_, c]) => c.name),
+      datasets: [
+        { label: 'CKD Population (M)', data: top12.map(([_, c]) => c.pop * c.prev / 100), backgroundColor: '#818cf8', borderRadius: 4, borderWidth: 0, yAxisID: 'y' },
+        { label: 'Dialysis Cost/Yr (USD)', data: top12.map(([_, c]) => c.dialysisCost), backgroundColor: '#fbbf2480', borderColor: '#fbbf24', type: 'line', borderWidth: 2, pointRadius: 4, yAxisID: 'y1' },
+      ]
+    },
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#8899b0', font: { family: "'DM Sans'" }, boxWidth: 10 } } },
+      scales: {
+        x: { ticks: { color: '#5a6d85', font: { family: "'DM Sans'", size: 10 }, maxRotation: 45 }, grid: { color: 'rgba(42,58,82,0.3)' } },
+        y: { position: 'left', ticks: { color: '#818cf8', font: { family: "'DM Sans'", size: 11 } }, grid: { color: 'rgba(42,58,82,0.3)' }, title: { display: true, text: 'CKD population (M)', color: '#818cf8' } },
+        y1: { position: 'right', ticks: { color: '#fbbf24', font: { family: "'DM Sans'", size: 11 } }, grid: { display: false }, title: { display: true, text: 'Dialysis cost/yr (USD)', color: '#fbbf24' } }
+      }
+    }
+  });
+}
+
+Chart.defaults.font.family = "'DM Sans'";
+loadCountry();
+</script>
+</body>
+</html>

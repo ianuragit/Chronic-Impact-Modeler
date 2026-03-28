@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diabetes Global Burden Calculator & Visualizer</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,500;0,9..40,700;1,9..40,400&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0B1120;
+  --bg2: #111827;
+  --bg3: #1a2332;
+  --card: #162032;
+  --card-hover: #1d2b42;
+  --border: #2a3a52;
+  --border-light: #334466;
+  --text: #e2e8f0;
+  --text-dim: #8899b0;
+  --text-muted: #5a6d85;
+  --accent: #38bdf8;
+  --accent2: #818cf8;
+  --accent3: #34d399;
+  --warn: #fbbf24;
+  --danger: #f87171;
+  --pink: #f472b6;
+  --orange: #fb923c;
+  --serif: 'Instrument Serif', Georgia, serif;
+  --sans: 'DM Sans', system-ui, sans-serif;
+  --radius: 12px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.3);
+}
+
+[data-theme="light"] {
+  --bg: #f0f4f8;
+  --bg2: #e2e8f0;
+  --bg3: #dde4ed;
+  --card: #ffffff;
+  --card-hover: #f8fafc;
+  --border: #cbd5e1;
+  --border-light: #94a3b8;
+  --text: #1e293b;
+  --text-dim: #475569;
+  --text-muted: #64748b;
+  --accent: #0284c7;
+  --accent2: #6366f1;
+  --accent3: #059669;
+  --warn: #d97706;
+  --danger: #dc2626;
+  --pink: #db2777;
+  --orange: #ea580c;
+  --shadow: 0 4px 24px rgba(0,0,0,0.08);
+}
+[data-theme="light"] .site-header { background: linear-gradient(135deg, #1e3a5f 0%, #2d1b69 50%, #1e3a5f 100%); }
+[data-theme="light"] .stat-value { color: var(--text); }
+[data-theme="light"] .card-title { color: var(--text); }
+[data-theme="light"] .section-header h2 { color: var(--text); }
+[data-theme="light"] .tab.active { background: var(--card); color: var(--text); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+[data-theme="light"] .data-table tr:hover td { background: rgba(2,132,199,0.04); }
+[data-theme="light"] .burden-bar div { color: #fff; }
+[data-theme="light"] input[type="range"] { background: var(--bg2); border-color: var(--border); }
+[data-theme="light"] input[type="range"]::-webkit-slider-thumb { border-color: #fff; box-shadow: 0 0 8px rgba(2,132,199,0.3); }
+[data-theme="light"] .methodology { background: #f1f5f9; }
+[data-theme="light"] .info-tip:hover::after { background: #fff; }
+[data-theme="light"] .input-group select option { background: #fff; }
+
+/* === THEME TOGGLE === */
+.theme-toggle { position: absolute; top: 50%; right: 32px; transform: translateY(-50%); z-index: 10; display: flex; align-items: center; gap: 10px; }
+.theme-toggle-label { font-size: 0.78rem; color: rgba(255,255,255,0.6); font-weight: 500; }
+.theme-switch { position: relative; width: 52px; height: 28px; cursor: pointer; }
+.theme-switch input { opacity: 0; width: 0; height: 0; }
+.theme-switch .slider { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.15); border-radius: 28px; transition: 0.3s; border: 1px solid rgba(255,255,255,0.2); }
+.theme-switch .slider::before { content: ''; position: absolute; height: 20px; width: 20px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: 0.3s; box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
+.theme-switch input:checked + .slider { background: rgba(255,255,255,0.3); }
+.theme-switch input:checked + .slider::before { transform: translateX(24px); }
+.theme-icon { font-size: 1.1rem; line-height: 1; }
+
+/* === GUIDE STYLES === */
+.guide-section { margin-bottom: 32px; }
+.guide-section h3 { font-family: var(--serif); font-size: 1.25rem; color: var(--accent); margin-bottom: 12px; font-weight: 400; }
+.guide-step { display: flex; gap: 16px; margin-bottom: 16px; padding: 16px; background: var(--bg2); border-radius: 10px; border: 1px solid var(--border); }
+.guide-step-num { flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; }
+.guide-step-content { flex: 1; }
+.guide-step-content h4 { font-size: 0.95rem; color: var(--text); margin-bottom: 4px; font-weight: 600; }
+.guide-step-content p { font-size: 0.84rem; color: var(--text-dim); line-height: 1.6; }
+.guide-tab-card { padding: 20px; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 12px; }
+.guide-tab-card h4 { font-size: 0.95rem; color: var(--text); margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+.guide-tab-card h4 .gtag { display: inline-flex; padding: 2px 10px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+.guide-tab-card p { font-size: 0.84rem; color: var(--text-dim); line-height: 1.6; }
+.guide-metric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+.guide-metric { padding: 12px 16px; background: var(--card); border: 1px solid var(--border); border-radius: 8px; }
+.guide-metric dt { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); font-weight: 500; }
+.guide-metric dd { font-size: 0.88rem; color: var(--text); margin-top: 2px; font-weight: 500; }
+@media (max-width: 768px) { .guide-metric-grid { grid-template-columns: 1fr; } .theme-toggle-label { display: none; } }
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+body { font-family: var(--sans); background: var(--bg); color: var(--text); line-height: 1.6; min-height: 100vh; }
+
+/* === HEADER === */
+.site-header { background: linear-gradient(135deg, #0f1a2e 0%, #1a1040 50%, #0f1a2e 100%); border-bottom: 1px solid var(--border); padding: 32px 0; position: relative; overflow: hidden; }
+.site-header::before { content:''; position:absolute; top:-50%; left:-50%; width:200%; height:200%; background: radial-gradient(ellipse at 30% 50%, rgba(56,189,248,0.06) 0%, transparent 50%), radial-gradient(ellipse at 70% 50%, rgba(129,140,248,0.05) 0%, transparent 50%); pointer-events:none; }
+.header-inner { max-width: 1400px; margin: 0 auto; padding: 0 32px; position: relative; z-index:1; }
+.header-inner h1 { font-family: var(--serif); font-size: 2.8rem; font-weight: 400; letter-spacing: -0.02em; color: #fff; }
+.header-inner h1 span { color: var(--accent); }
+.header-sub { font-size: 1.05rem; color: var(--text-dim); margin-top: 8px; font-weight: 300; }
+.header-badges { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+.badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 14px; border-radius: 100px; font-size: 0.75rem; font-weight: 500; letter-spacing: 0.02em; border: 1px solid var(--border); background: rgba(255,255,255,0.03); color: var(--text-dim); }
+.badge .dot { width: 6px; height: 6px; border-radius: 50%; }
+
+/* === LAYOUT === */
+.container { max-width: 1400px; margin: 0 auto; padding: 32px; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+
+/* === CARDS === */
+.card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; transition: border-color 0.2s; }
+.card:hover { border-color: var(--border-light); }
+.card-title { font-family: var(--serif); font-size: 1.35rem; margin-bottom: 16px; color: #fff; display: flex; align-items: center; gap: 10px; }
+.card-title .icon { font-size: 1.1rem; }
+
+/* === STAT CARDS === */
+.stat-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; text-align: center; position: relative; overflow: hidden; }
+.stat-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; }
+.stat-card.blue::before { background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+.stat-card.green::before { background: linear-gradient(90deg, var(--accent3), #22d3ee); }
+.stat-card.amber::before { background: linear-gradient(90deg, var(--warn), var(--orange)); }
+.stat-card.red::before { background: linear-gradient(90deg, var(--danger), var(--pink)); }
+.stat-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 8px; font-weight: 500; }
+.stat-value { font-family: var(--serif); font-size: 2rem; color: #fff; font-weight: 400; }
+.stat-sub { font-size: 0.8rem; color: var(--text-dim); margin-top: 4px; }
+
+/* === INPUTS === */
+.input-group { margin-bottom: 16px; }
+.input-group label { display: block; font-size: 0.8rem; color: var(--text-dim); margin-bottom: 6px; font-weight: 500; letter-spacing: 0.02em; }
+.input-group input, .input-group select { width: 100%; padding: 10px 14px; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: var(--sans); font-size: 0.9rem; outline: none; transition: border-color 0.2s; }
+.input-group input:focus, .input-group select:focus { border-color: var(--accent); }
+.input-group select option { background: var(--bg2); }
+.input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.input-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+/* === RANGE SLIDERS === */
+.slider-group { margin-bottom: 16px; }
+.slider-group label { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-dim); margin-bottom: 6px; font-weight: 500; }
+.slider-group label span { color: var(--accent); font-family: var(--sans); }
+input[type="range"] { -webkit-appearance: none; width: 100%; height: 6px; border-radius: 3px; background: var(--bg2); outline: none; border: 1px solid var(--border); }
+input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--accent); cursor: pointer; border: 2px solid var(--bg); box-shadow: 0 0 8px rgba(56,189,248,0.3); }
+
+/* === TABS === */
+.tabs { display: flex; gap: 4px; background: var(--bg2); border-radius: 10px; padding: 4px; margin-bottom: 24px; border: 1px solid var(--border); overflow-x: auto; }
+.tab { padding: 10px 20px; border-radius: 8px; font-size: 0.85rem; font-weight: 500; color: var(--text-dim); cursor: pointer; transition: all 0.2s; border: none; background: none; white-space: nowrap; font-family: var(--sans); }
+.tab:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+.tab.active { background: var(--card); color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+.tab-content { display: none; }
+.tab-content.active { display: block; animation: fadeIn 0.3s; }
+@keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+/* === SCENARIO PILLS === */
+.scenario-bar { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+.scenario-pill { padding: 8px 18px; border-radius: 100px; font-size: 0.8rem; font-weight: 500; cursor: pointer; transition: all 0.2s; border: 1px solid var(--border); background: transparent; color: var(--text-dim); font-family: var(--sans); }
+.scenario-pill:hover { border-color: var(--text-dim); }
+.scenario-pill.active-opt { background: rgba(52,211,153,0.12); border-color: var(--accent3); color: var(--accent3); }
+.scenario-pill.active-base { background: rgba(56,189,248,0.12); border-color: var(--accent); color: var(--accent); }
+.scenario-pill.active-pess { background: rgba(248,113,113,0.12); border-color: var(--danger); color: var(--danger); }
+
+/* === CHARTS === */
+.chart-container { position: relative; width: 100%; height: 360px; }
+.chart-container-sm { position: relative; width: 100%; height: 280px; }
+
+/* === DATA TABLE === */
+.data-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+.data-table th { background: var(--bg2); color: var(--text-dim); font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.72rem; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); position: sticky; top:0; }
+.data-table td { padding: 10px 14px; border-bottom: 1px solid rgba(42,58,82,0.5); }
+.data-table tr:hover td { background: rgba(56,189,248,0.03); }
+.data-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.table-scroll { max-height: 500px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius); }
+
+/* === SECTION HEADERS === */
+.section-header { margin: 40px 0 24px; }
+.section-header h2 { font-family: var(--serif); font-size: 1.8rem; color: #fff; font-weight: 400; }
+.section-header p { color: var(--text-dim); font-size: 0.9rem; margin-top: 4px; }
+.divider { width: 48px; height: 3px; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 2px; margin-top: 12px; }
+
+/* === BURDEN BREAKDOWN BAR === */
+.burden-bar { display: flex; height: 32px; border-radius: 8px; overflow: hidden; margin: 12px 0; }
+.burden-bar div { display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 600; color: #fff; transition: width 0.5s ease; min-width: 0; }
+.burden-legend { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 8px; }
+.burden-legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: var(--text-dim); }
+.burden-legend-item .swatch { width: 10px; height: 10px; border-radius: 3px; }
+
+/* === RESPONSIVE === */
+@media (max-width: 1100px) { .grid-2 { grid-template-columns: 1fr; } .grid-3 { grid-template-columns: 1fr; } }
+@media (max-width: 768px) { .grid-4 { grid-template-columns: 1fr 1fr; } .header-inner h1 { font-size: 2rem; } .container { padding: 16px; } .input-row, .input-row-3 { grid-template-columns: 1fr; } }
+
+/* === TOOLTIP === */
+.info-tip { display: inline-block; width: 16px; height: 16px; border-radius: 50%; background: var(--border); color: var(--text-dim); font-size: 0.65rem; text-align: center; line-height: 16px; cursor: help; position: relative; font-weight: 700; margin-left: 4px; }
+.info-tip:hover::after { content: attr(data-tip); position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--bg2); border: 1px solid var(--border); color: var(--text); padding: 8px 12px; border-radius: 8px; font-size: 0.75rem; font-weight: 400; white-space: nowrap; z-index: 99; max-width: 280px; white-space: normal; box-shadow: var(--shadow); }
+
+.methodology { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-top: 24px; font-size: 0.82rem; color: var(--text-dim); line-height: 1.7; }
+.methodology h4 { color: var(--text); margin-bottom: 8px; font-size: 0.9rem; }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="theme-toggle">
+      <span class="theme-icon">&#9790;</span>
+      <label class="theme-switch"><input type="checkbox" id="themeToggle" onchange="toggleTheme()"><span class="slider"></span></label>
+      <span class="theme-icon">&#9788;</span>
+      <span class="theme-toggle-label" id="themeLabel">Light</span>
+    </div>
+    <h1>Diabetes <span>Burden</span> Calculator</h1>
+    <p class="header-sub">Advanced economic, health & workforce impact modeling across 20 countries with scenario projections</p>
+    <div class="header-badges">
+      <span class="badge"><span class="dot" style="background:var(--accent3)"></span> IDF Atlas 11th Ed.</span>
+      <span class="badge"><span class="dot" style="background:var(--accent)"></span> GBD 2021</span>
+      <span class="badge"><span class="dot" style="background:var(--accent2)"></span> WHO GHO</span>
+      <span class="badge"><span class="dot" style="background:var(--warn)"></span> Hybrid Projection Model</span>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- TABS -->
+  <div class="tabs" id="mainTabs">
+    <button class="tab active" onclick="switchTab('guide',this)">&#128214; Guide</button>
+    <button class="tab" onclick="switchTab('dashboard',this)">Dashboard</button>
+    <button class="tab" onclick="switchTab('projections',this)">Projections &amp; Scenarios</button>
+    <button class="tab" onclick="switchTab('economic',this)">Economic Burden</button>
+    <button class="tab" onclick="switchTab('workforce',this)">Workforce &amp; Societal</button>
+    <button class="tab" onclick="switchTab('country',this)">Country Comparison</button>
+    <button class="tab" onclick="switchTab('methodology',this)">Methodology</button>
+  </div>
+
+  <!-- ======== GUIDE ======== -->
+  <div class="tab-content active" id="tab-guide">
+    <div class="section-header">
+      <h2>How to Use This Calculator</h2>
+      <p>A complete guide to interpreting the data, understanding the model, and getting the most from each tab</p>
+      <div class="divider"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="icon">&#127919;</span> Who Is This For?</div>
+      <div class="methodology" style="margin-top:0">
+        <p>This tool is designed for <strong>public health researchers, policy analysts, healthcare economists, and NGO professionals</strong> who need to understand and communicate the multi-dimensional burden of diabetes at national or global scale. It can be used for grant proposals, policy briefs, health budget planning, advocacy presentations, and academic research. Every number on every tab updates instantly when you change inputs, so you can model any country or hypothetical scenario in seconds.</p>
+      </div>
+    </div>
+
+    <div class="guide-section" style="margin-top:28px">
+      <h3>Quick Start (3 Steps)</h3>
+      <div class="guide-step">
+        <div class="guide-step-num">1</div>
+        <div class="guide-step-content">
+          <h4>Select a Country</h4>
+          <p>Go to the <strong>Dashboard</strong> tab and pick a country from the dropdown. This loads research-backed default values for population, prevalence, per-patient costs, wages, DALY rates, complication rates, and projection parameters. All 20 countries have individually sourced data from IDF, WHO, GBD, and country-specific studies.</p>
+        </div>
+      </div>
+      <div class="guide-step">
+        <div class="guide-step-num">2</div>
+        <div class="guide-step-content">
+          <h4>Customize Parameters (Optional)</h4>
+          <p>Override any default value to model a specific region, intervention scenario, or hypothetical. For example, set prevalence to a sub-national estimate, adjust complication rates to reflect a screening program, or change cost-per-patient to model a specific insurance pool. Choosing "Custom Values" in the dropdown preserves your manual inputs.</p>
+        </div>
+      </div>
+      <div class="guide-step">
+        <div class="guide-step-num">3</div>
+        <div class="guide-step-content">
+          <h4>Explore the Tabs</h4>
+          <p>Each tab presents a different dimension of the diabetes burden. All charts and numbers are live-linked to the Dashboard inputs. Switch between tabs to see how your inputs affect economic costs, workforce productivity, future projections, and cross-country rankings.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="guide-section">
+      <h3>Tab-by-Tab Explanation</h3>
+
+      <div class="guide-tab-card">
+        <h4><span class="gtag" style="background:rgba(56,189,248,0.15); color:#38bdf8;">INPUTS + OVERVIEW</span> Dashboard</h4>
+        <p>The main control panel. The left side has all model inputs: population, prevalence, cost per patient, wages, complication rate, complication cost multiplier, and caregiver hours. The right side shows four headline stat cards (diabetic population, undiagnosed count, total annual cost, DALYs lost) and a stacked cost breakdown bar that visualizes where money goes: direct uncomplicated care, direct complicated care, absenteeism, presenteeism, reduced workforce participation, and informal caregiver costs. A doughnut chart breaks this down further.</p>
+        <div class="guide-metric-grid">
+          <div class="guide-metric"><dt>Diabetic Population</dt><dd>Population &times; Prevalence rate</dd></div>
+          <div class="guide-metric"><dt>Undiagnosed</dt><dd>Diabetics &times; Undiagnosed %</dd></div>
+          <div class="guide-metric"><dt>Total Annual Cost</dt><dd>Direct + Indirect + Caregiver costs</dd></div>
+          <div class="guide-metric"><dt>DALYs Lost</dt><dd>(Population / 100K) &times; Country DALY rate</dd></div>
+        </div>
+      </div>
+
+      <div class="guide-tab-card">
+        <h4><span class="gtag" style="background:rgba(129,140,248,0.15); color:#818cf8;">FUTURE MODELING</span> Projections &amp; Scenarios</h4>
+        <p>Projects the diabetic population and economic burden from 2026 to 2056 using a hybrid model that combines compound prevalence growth (CAGR), population growth, and healthcare cost inflation. Three scenarios are available:</p>
+        <p style="margin-top:8px"><strong style="color:#34d399">Optimistic (0.65x):</strong> Assumes strong public health intervention achieves a 35% reduction in disease growth, based on evidence from the Diabetes Prevention Program which achieved 58% risk reduction through lifestyle changes.</p>
+        <p style="margin-top:4px"><strong style="color:#38bdf8">Baseline (1.00x):</strong> Current trends continue without significant policy changes. This is the default projection.</p>
+        <p style="margin-top:4px"><strong style="color:#f87171">Pessimistic (1.30x):</strong> Worsening obesity rates, urbanization, and dietary shifts in LMICs accelerate diabetes growth by 30% above baseline.</p>
+        <p style="margin-top:8px">Click any scenario pill to toggle it on/off in the chart. Use the sliders below the charts to adjust CAGR, population growth rate, and healthcare cost inflation for sensitivity analysis.</p>
+      </div>
+
+      <div class="guide-tab-card">
+        <h4><span class="gtag" style="background:rgba(251,191,36,0.15); color:#fbbf24;">FINANCIAL</span> Economic Burden</h4>
+        <p>Deep-dives into where money flows. The pie chart splits total cost into direct medical, indirect productivity losses, and informal caregiver costs. The payer chart shows who bears the burden: out-of-pocket (patients/families), government/public insurance, and private insurance. These splits vary dramatically by country (India: 55% OOP vs. France: 8% OOP).</p>
+        <p style="margin-top:8px">The <strong>Complication Cost Waterfall</strong> shows how per-patient costs escalate by complication type. An uncomplicated diabetic may cost $400/year in India, but a patient with nephropathy requiring dialysis costs 3.5x more, and an amputation event costs 8x more. This waterfall uses your Dashboard cost-per-patient as the baseline and applies research-derived multipliers.</p>
+        <p style="margin-top:8px"><strong>Catastrophic expenditure</strong> measures how many families spend more than 10% of household income on diabetes care, often pushing them below the poverty line. In LMICs, this affects 25-40% of diabetic households.</p>
+      </div>
+
+      <div class="guide-tab-card">
+        <h4><span class="gtag" style="background:rgba(248,113,113,0.15); color:#f87171;">SOCIETAL</span> Workforce &amp; Societal</h4>
+        <p>Quantifies the hidden costs that standard health economics often misses. Four components of productivity loss are calculated:</p>
+        <p style="margin-top:8px"><strong>Absenteeism:</strong> Diabetics take an average of 5.5 extra sick days per year beyond baseline. Cost = excess days &times; daily wage.</p>
+        <p style="margin-top:4px"><strong>Presenteeism:</strong> Working while sick at reduced capacity. Research shows 6.6% productivity loss for diabetics, meaning every 15 workers lose the equivalent of 1 full worker's output.</p>
+        <p style="margin-top:4px"><strong>Reduced participation:</strong> 10% of working-age diabetics drop out of the labor force entirely, per JAMA Health Forum 2025.</p>
+        <p style="margin-top:4px"><strong>Caregiver productivity:</strong> Informal caregivers of complicated diabetics lose work hours. Set via the "Caregiver burden hrs/wk" slider on Dashboard.</p>
+        <p style="margin-top:8px">The DALY doughnut splits disability burden into Years of Life Lost (premature death, ~55%) and Years Lived with Disability (for uncomplicated and complicated patients). The intergenerational panel highlights that children of diabetic parents face 40-70% lifetime T2D risk, and 35% of diabetics experience comorbid depression.</p>
+      </div>
+
+      <div class="guide-tab-card">
+        <h4><span class="gtag" style="background:rgba(52,211,153,0.15); color:#34d399;">COMPARISON</span> Country Comparison</h4>
+        <p>A dual-axis chart showing diabetic population (bars, left axis) and cost-per-patient (line, right axis) for the top 12 countries by diabetic population. This reveals the stark inverse relationship: countries with the most diabetics (China, India) often have the lowest per-patient spending, while high-income countries spend 30-100x more per patient but have far fewer total cases.</p>
+        <p style="margin-top:8px">Below the chart, a full sortable data table covers all 20 countries with population, prevalence, diabetic count, undiagnosed rate, cost per patient, national cost, and DALYs per 100K. Use this for quick reference when comparing countries in reports or presentations.</p>
+      </div>
+
+      <div class="guide-tab-card">
+        <h4><span class="gtag" style="background:rgba(244,114,182,0.15); color:#f472b6;">TRANSPARENCY</span> Methodology</h4>
+        <p>Documents the projection formula, all data sources with their editions and years, the economic model (human-capital approach for indirect costs), DALY calculation methodology, and key limitations. Essential reading if you plan to cite numbers from this tool in publications or policy documents.</p>
+      </div>
+    </div>
+
+    <div class="guide-section">
+      <h3>Key Metrics Glossary</h3>
+      <div class="guide-metric-grid">
+        <div class="guide-metric"><dt>DALY</dt><dd>Disability-Adjusted Life Year: 1 DALY = 1 year of healthy life lost to illness or premature death</dd></div>
+        <div class="guide-metric"><dt>QALY</dt><dd>Quality-Adjusted Life Year: 1 QALY = 1 year of life in perfect health (EQ-5D based)</dd></div>
+        <div class="guide-metric"><dt>CAGR</dt><dd>Compound Annual Growth Rate: the steady yearly growth rate needed to go from start to end value</dd></div>
+        <div class="guide-metric"><dt>Presenteeism</dt><dd>Working while sick at reduced productivity; costs 3x more than absenteeism overall</dd></div>
+        <div class="guide-metric"><dt>Catastrophic Expenditure</dt><dd>Health spending exceeding 10% of household income, often causing impoverishment</dd></div>
+        <div class="guide-metric"><dt>OOP (Out-of-Pocket)</dt><dd>Direct payments by patients/families not covered by any insurance or public scheme</dd></div>
+        <div class="guide-metric"><dt>PAF</dt><dd>Population Attributable Fraction: % of disease cases caused by a specific risk factor</dd></div>
+        <div class="guide-metric"><dt>KRT pmp</dt><dd>Kidney Replacement Therapy per million population (dialysis + transplant access metric)</dd></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="icon">&#128161;</span> Tips for Power Users</div>
+      <div class="methodology" style="margin-top:0">
+        <p><strong>Scenario comparison:</strong> Load a country, note the 2041 projection, then toggle between scenarios to see how investment in prevention (optimistic) vs. inaction (pessimistic) changes the outcome. The difference is often 30-50% in total diabetic population.</p>
+        <p style="margin-top:8px"><strong>Sensitivity analysis:</strong> Pick one slider at a time (e.g., complication rate) and sweep it from min to max while watching the stat cards update. This reveals which parameters have the highest leverage on total burden.</p>
+        <p style="margin-top:8px"><strong>Custom sub-national modeling:</strong> Select "Custom Values" from the dropdown, then input data for a specific state, province, or city. Use local survey prevalence, regional wage data, and local cost figures for high-accuracy sub-national estimates.</p>
+        <p style="margin-top:8px"><strong>Theme toggle:</strong> Use the sun/moon toggle in the top-right corner of the header to switch between dark and light mode. Light mode is ideal for screenshots in reports and presentations. Dark mode reduces eye strain during extended analysis sessions.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======== DASHBOARD ======== -->
+  <div class="tab-content" id="tab-dashboard">
+
+    <div class="grid-2">
+      <!-- LEFT: Inputs -->
+      <div class="card">
+        <div class="card-title"><span class="icon">&#9881;</span> Model Parameters</div>
+
+        <div class="input-group">
+          <label>Country / Region Preset</label>
+          <select id="countrySelect" onchange="loadCountry()">
+            <option value="custom">Custom Values</option>
+            <option value="IN" selected>India</option>
+            <option value="US">United States</option>
+            <option value="CN">China</option>
+            <option value="UK">United Kingdom</option>
+            <option value="DE">Germany</option>
+            <option value="JP">Japan</option>
+            <option value="BR">Brazil</option>
+            <option value="NG">Nigeria</option>
+            <option value="ZA">South Africa</option>
+            <option value="AU">Australia</option>
+            <option value="CA">Canada</option>
+            <option value="MX">Mexico</option>
+            <option value="ID">Indonesia</option>
+            <option value="BD">Bangladesh</option>
+            <option value="EG">Egypt</option>
+            <option value="SA">Saudi Arabia</option>
+            <option value="FR">France</option>
+            <option value="KR">South Korea</option>
+            <option value="RU">Russia</option>
+            <option value="TH">Thailand</option>
+          </select>
+        </div>
+
+        <div class="input-row">
+          <div class="input-group">
+            <label>Total Population (millions)</label>
+            <input type="number" id="population" value="1428" step="1" onchange="recalc()">
+          </div>
+          <div class="input-group">
+            <label>Diabetes Prevalence (%)<span class="info-tip" data-tip="Adults 20-79, IDF definition">?</span></label>
+            <input type="number" id="prevalence" value="9.6" step="0.1" onchange="recalc()">
+          </div>
+        </div>
+
+        <div class="input-row">
+          <div class="input-group">
+            <label>Undiagnosed (%)<span class="info-tip" data-tip="Proportion of diabetics who don't know they have it">?</span></label>
+            <input type="number" id="undiagnosed" value="50" step="1" onchange="recalc()">
+          </div>
+          <div class="input-group">
+            <label>Pre-diabetes Prevalence (%)</label>
+            <input type="number" id="prediabetes" value="15.3" step="0.1" onchange="recalc()">
+          </div>
+        </div>
+
+        <div class="input-row">
+          <div class="input-group">
+            <label>Direct Cost / Patient / Year (USD)</label>
+            <input type="number" id="directCost" value="400" step="10" onchange="recalc()">
+          </div>
+          <div class="input-group">
+            <label>GDP Per Capita (USD)</label>
+            <input type="number" id="gdpPerCapita" value="2500" step="100" onchange="recalc()">
+          </div>
+        </div>
+
+        <div class="input-row">
+          <div class="input-group">
+            <label>Avg Annual Wage (USD)</label>
+            <input type="number" id="avgWage" value="2100" step="100" onchange="recalc()">
+          </div>
+          <div class="input-group">
+            <label>Working-Age Population (%)</label>
+            <input type="number" id="workingAgePct" value="67" step="1" onchange="recalc()">
+          </div>
+        </div>
+
+        <div class="slider-group">
+          <label>Complication Rate (%) <span id="compRateVal">35</span></label>
+          <input type="range" id="compRate" min="10" max="70" value="35" oninput="document.getElementById('compRateVal').textContent=this.value; recalc()">
+        </div>
+        <div class="slider-group">
+          <label>Complication Cost Multiplier <span id="compMultVal">2.5</span>x</label>
+          <input type="range" id="compMult" min="1.5" max="5" value="2.5" step="0.1" oninput="document.getElementById('compMultVal').textContent=this.value; recalc()">
+        </div>
+        <div class="slider-group">
+          <label>Caregiver Burden (hrs/wk per complicated patient) <span id="careHrsVal">8</span></label>
+          <input type="range" id="careHrs" min="0" max="40" value="8" oninput="document.getElementById('careHrsVal').textContent=this.value; recalc()">
+        </div>
+      </div>
+
+      <!-- RIGHT: Key Stats -->
+      <div>
+        <div class="grid-2" style="margin-bottom:24px">
+          <div class="stat-card blue">
+            <div class="stat-label">Diabetic Population</div>
+            <div class="stat-value" id="statPop">137.1M</div>
+            <div class="stat-sub" id="statPopSub">9.6% prevalence</div>
+          </div>
+          <div class="stat-card amber">
+            <div class="stat-label">Undiagnosed</div>
+            <div class="stat-value" id="statUndiag">68.5M</div>
+            <div class="stat-sub" id="statUndiagSub">50.0% of diabetics</div>
+          </div>
+          <div class="stat-card green">
+            <div class="stat-label">Total Annual Cost</div>
+            <div class="stat-value" id="statCost">$31.9B</div>
+            <div class="stat-sub" id="statCostSub">Direct + Indirect</div>
+          </div>
+          <div class="stat-card red">
+            <div class="stat-label">DALYs Lost</div>
+            <div class="stat-value" id="statDaly">14.4M</div>
+            <div class="stat-sub" id="statDalySub">years of healthy life</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">&#128200;</span> Cost Breakdown</div>
+          <div class="burden-bar" id="burdenBar"></div>
+          <div class="burden-legend" id="burdenLegend"></div>
+          <div class="chart-container-sm" style="margin-top:16px">
+            <canvas id="costBreakdownChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom row stats -->
+    <div class="grid-4" style="margin-top:24px">
+      <div class="stat-card blue">
+        <div class="stat-label">Pre-diabetics</div>
+        <div class="stat-value" id="statPreDM">218.5M</div>
+        <div class="stat-sub">at risk of conversion</div>
+      </div>
+      <div class="stat-card amber">
+        <div class="stat-label">With Complications</div>
+        <div class="stat-value" id="statComp">48.0M</div>
+        <div class="stat-sub" id="statCompSub">35% complication rate</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-label">Workforce Impact</div>
+        <div class="stat-value" id="statWork">$12.3B</div>
+        <div class="stat-sub">productivity loss/year</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-label">Caregiver Hours</div>
+        <div class="stat-value" id="statCare">20.0B</div>
+        <div class="stat-sub">informal hrs/year</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======== PROJECTIONS ======== -->
+  <div class="tab-content" id="tab-projections">
+    <div class="section-header">
+      <h2>Future Burden Projections</h2>
+      <p>Compound growth model with demographic aging curves and scenario multipliers</p>
+      <div class="divider"></div>
+    </div>
+
+    <div class="scenario-bar">
+      <button class="scenario-pill active-opt" onclick="setScenario('optimistic', this)">&#x1F7E2; Optimistic (Strong Intervention)</button>
+      <button class="scenario-pill active-base" onclick="setScenario('baseline', this)">&#x1F535; Baseline (Current Trends)</button>
+      <button class="scenario-pill active-pess" onclick="setScenario('pessimistic', this)">&#x1F534; Pessimistic (Worsening Factors)</button>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Prevalence & Population Projections</div>
+        <div class="chart-container">
+          <canvas id="projectionChart"></canvas>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Cumulative Economic Burden</div>
+        <div class="chart-container">
+          <canvas id="costProjectionChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-3" style="margin-top:24px">
+      <div class="stat-card blue">
+        <div class="stat-label">5-Year Projection (2031)</div>
+        <div class="stat-value" id="proj5yr">—</div>
+        <div class="stat-sub" id="proj5yrCost">—</div>
+      </div>
+      <div class="stat-card amber">
+        <div class="stat-label">15-Year Projection (2041)</div>
+        <div class="stat-value" id="proj15yr">—</div>
+        <div class="stat-sub" id="proj15yrCost">—</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-label">30-Year Projection (2056)</div>
+        <div class="stat-value" id="proj30yr">—</div>
+        <div class="stat-sub" id="proj30yrCost">—</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:24px">
+      <div class="card-title">Projection Parameters</div>
+      <div class="input-row-3">
+        <div class="slider-group">
+          <label>Prevalence CAGR (%) <span id="cagrVal">2.0</span></label>
+          <input type="range" id="cagr" min="0.5" max="5" value="2.0" step="0.1" oninput="document.getElementById('cagrVal').textContent=this.value; recalcProjections()">
+        </div>
+        <div class="slider-group">
+          <label>Pop. Growth Rate (%) <span id="popGrowthVal">0.8</span></label>
+          <input type="range" id="popGrowth" min="-0.5" max="3" value="0.8" step="0.1" oninput="document.getElementById('popGrowthVal').textContent=this.value; recalcProjections()">
+        </div>
+        <div class="slider-group">
+          <label>Healthcare Cost Inflation (%) <span id="costInflVal">10.0</span></label>
+          <input type="range" id="costInfl" min="2" max="18" value="10.0" step="0.5" oninput="document.getElementById('costInflVal').textContent=this.value; recalcProjections()">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======== ECONOMIC ======== -->
+  <div class="tab-content" id="tab-economic">
+    <div class="section-header">
+      <h2>Economic Burden Deep Dive</h2>
+      <p>Direct costs, indirect costs, catastrophic expenditure, and fiscal impact</p>
+      <div class="divider"></div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Cost Distribution by Category</div>
+        <div class="chart-container">
+          <canvas id="econPieChart"></canvas>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Patient vs. State vs. Insurance Burden</div>
+        <div class="chart-container">
+          <canvas id="payerChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-3" style="margin-top:24px">
+      <div class="stat-card blue">
+        <div class="stat-label">Direct Medical Costs</div>
+        <div class="stat-value" id="econDirect">—</div>
+        <div class="stat-sub">medications, hospitalizations, procedures</div>
+      </div>
+      <div class="stat-card amber">
+        <div class="stat-label">Indirect Costs</div>
+        <div class="stat-value" id="econIndirect">—</div>
+        <div class="stat-sub">productivity, absenteeism, presenteeism</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-label">Catastrophic Expenditure</div>
+        <div class="stat-value" id="econCatastrophic">—</div>
+        <div class="stat-sub" id="econCatSub">families pushed below poverty</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:24px">
+      <div class="card-title">Complication Cost Waterfall</div>
+      <div class="chart-container">
+        <canvas id="complicationChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======== WORKFORCE ======== -->
+  <div class="tab-content" id="tab-workforce">
+    <div class="section-header">
+      <h2>Workforce &amp; Societal Impact</h2>
+      <p>Productivity loss, caregiver burden, educational effects, and intergenerational risk</p>
+      <div class="divider"></div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Productivity Loss Breakdown</div>
+        <div class="chart-container">
+          <canvas id="workforceChart"></canvas>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">DALY Components</div>
+        <div class="chart-container">
+          <canvas id="dalyChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-4" style="margin-top:24px">
+      <div class="stat-card blue">
+        <div class="stat-label">Reduced Participation</div>
+        <div class="stat-value" id="wfPartic">—</div>
+        <div class="stat-sub">fewer workers in labor force</div>
+      </div>
+      <div class="stat-card amber">
+        <div class="stat-label">Presenteeism Days Lost</div>
+        <div class="stat-value" id="wfPresent">—</div>
+        <div class="stat-sub">equivalent full workdays/yr</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-label">Absenteeism Days</div>
+        <div class="stat-value" id="wfAbsent">—</div>
+        <div class="stat-sub">excess sick days/yr</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-label">GDP Impact</div>
+        <div class="stat-value" id="wfGdp">—</div>
+        <div class="stat-sub">% of national GDP</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:24px">
+      <div class="card-title">Mental Health & Intergenerational Cascade</div>
+      <div class="grid-3">
+        <div style="text-align:center; padding:16px">
+          <div style="font-size:2.4rem; font-family:var(--serif); color:var(--warn)">35%</div>
+          <div style="font-size:0.82rem; color:var(--text-dim); margin-top:4px">Depression comorbidity in diabetics</div>
+        </div>
+        <div style="text-align:center; padding:16px">
+          <div style="font-size:2.4rem; font-family:var(--serif); color:var(--danger)">40%</div>
+          <div style="font-size:0.82rem; color:var(--text-dim); margin-top:4px">Lifetime T2D risk with 1 parent affected</div>
+        </div>
+        <div style="text-align:center; padding:16px">
+          <div style="font-size:2.4rem; font-family:var(--serif); color:var(--pink)">70%</div>
+          <div style="font-size:0.82rem; color:var(--text-dim); margin-top:4px">Lifetime T2D risk with both parents</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======== COUNTRY COMPARISON ======== -->
+  <div class="tab-content" id="tab-country">
+    <div class="section-header">
+      <h2>Country Comparison</h2>
+      <p>Side-by-side metrics across 20 countries</p>
+      <div class="divider"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Prevalence &amp; Economic Burden Comparison</div>
+      <div class="chart-container" style="height:450px">
+        <canvas id="countryCompChart"></canvas>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:24px">
+      <div class="card-title">Full Country Data Table</div>
+      <div class="table-scroll">
+        <table class="data-table" id="countryTable">
+          <thead>
+            <tr>
+              <th>Country</th>
+              <th>Population (M)</th>
+              <th>Prevalence (%)</th>
+              <th>Diabetics (M)</th>
+              <th>Undiagnosed (%)</th>
+              <th>Cost/Patient (USD)</th>
+              <th>National Cost (B)</th>
+              <th>DALYs/100K</th>
+            </tr>
+          </thead>
+          <tbody id="countryTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======== METHODOLOGY ======== -->
+  <div class="tab-content" id="tab-methodology">
+    <div class="section-header">
+      <h2>Methodology &amp; Data Sources</h2>
+      <p>Transparency in modeling assumptions and data provenance</p>
+      <div class="divider"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Projection Formula</div>
+      <div class="methodology">
+        <h4>Hybrid Compound Growth + Scenario Model</h4>
+        <p style="font-family:monospace; background:var(--bg); padding:12px; border-radius:8px; margin:12px 0; font-size:0.85rem; color:var(--accent)">
+          Projected_Cases(year) = Current_Cases &times; (1 + CAGR)<sup>years</sup> &times; Scenario_Multiplier &times; (Pop_Future / Pop_Current) &times; Age_Structure_Adj
+        </p>
+        <p><strong>Scenario Multipliers:</strong> Optimistic (0.65x) assumes strong intervention programs achieving 58% risk reduction (per DPP evidence). Baseline (1.00x) continues current trends. Pessimistic (1.30x) accounts for accelerating obesity and worsening diets in LMICs.</p>
+        <p style="margin-top:8px"><strong>Cost Projections:</strong> Economic burden is projected using healthcare cost inflation rates (regional, not global averages) applied compound annually. Indirect costs use a human-capital approach valuing lost productivity at country-specific average wages.</p>
+        <p style="margin-top:8px"><strong>DALY Calculation:</strong> DALYs = YLL (Years of Life Lost) + YLD (Years Lived with Disability). Disability weights from GBD 2021: uncomplicated diabetes = 0.049, neuropathy = 0.133, blindness = 0.338. DALYs are age-standardized to enable cross-country comparison.</p>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:24px">
+      <div class="card-title">Data Sources</div>
+      <div class="methodology">
+        <p><strong>Prevalence:</strong> IDF Diabetes Atlas 10th &amp; 11th Edition (2021 &amp; 2024). National survey data where available (NFHS for India, NHANES for USA, CNHS for China).</p>
+        <p style="margin-top:8px"><strong>Economic Data:</strong> ADA Economic Costs of Diabetes 2023 (USA). IDF health expenditure estimates. Country-specific cost-of-illness studies from Lancet, BMJ, and JAMA publications. World Bank health expenditure statistics.</p>
+        <p style="margin-top:8px"><strong>DALYs &amp; Health Metrics:</strong> Global Burden of Disease Study 2021 (IHME). Disability weights from GBD 2021. Life expectancy reductions from multi-country cohort studies.</p>
+        <p style="margin-top:8px"><strong>Workforce Data:</strong> JAMA Health Forum 2025 (participation reduction). ADA indirect cost methodology. WPAI (Work Productivity and Activity Impairment) studies. Caregiver burden from systematic reviews.</p>
+        <p style="margin-top:8px"><strong>Projections:</strong> Population projections from UN DESA World Population Prospects 2024. Healthcare inflation from Willis Towers Watson Global Medical Trends Survey 2025.</p>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:24px">
+      <div class="card-title">Limitations &amp; Caveats</div>
+      <div class="methodology">
+        <p>This tool provides estimates for policy analysis and research purposes. Actual costs and prevalence vary by sub-national region, urban/rural setting, and healthcare system structure. Cost data may lag current values by 1-3 years. Projection models assume continuation of underlying trends and do not account for breakthrough medical innovations (e.g., GLP-1 agonists' population-level impact) or pandemic disruptions. Default values represent best available published estimates and should be verified against local data where possible.</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ======== COUNTRY DATA ========
+const COUNTRIES = {
+  IN: { name:"India", pop:1428, prev:9.6, undiag:50, preDM:15.3, costPP:400, gdp:2500, wage:2100, workPop:67, daly:1050, compRate:35, compMult:2.5, careHrs:8, cagr:2.0, popGr:0.8, costInfl:12.1, catExp:25, oopPct:55 },
+  US: { name:"United States", pop:335, prev:10.7, undiag:23.4, preDM:38.0, costPP:12022, gdp:76000, wage:63000, workPop:62, daly:850, compRate:30, compMult:2.6, careHrs:6, cagr:1.5, popGr:0.5, costInfl:8.7, catExp:5, oopPct:15 },
+  CN: { name:"China", pop:1412, prev:10.6, undiag:51.7, preDM:15.5, costPP:1170, gdp:12700, wage:9500, workPop:70, daly:750, compRate:32, compMult:2.2, careHrs:7, cagr:2.2, popGr:0.1, costInfl:12.3, catExp:15, oopPct:35 },
+  UK: { name:"United Kingdom", pop:67, prev:6.3, undiag:33.5, preDM:12.0, costPP:5100, gdp:46000, wage:38000, workPop:63, daly:550, compRate:28, compMult:2.0, careHrs:5, cagr:1.3, popGr:0.3, costInfl:8.3, catExp:3, oopPct:10 },
+  DE: { name:"Germany", pop:84, prev:6.9, undiag:39.6, preDM:11.0, costPP:5500, gdp:52000, wage:44000, workPop:64, daly:520, compRate:27, compMult:2.0, careHrs:5, cagr:1.2, popGr:-0.1, costInfl:8.3, catExp:3, oopPct:12 },
+  JP: { name:"Japan", pop:124, prev:6.6, undiag:49.3, preDM:10.0, costPP:5300, gdp:34000, wage:30000, workPop:59, daly:400, compRate:25, compMult:1.8, careHrs:6, cagr:1.0, popGr:-0.5, costInfl:8.3, catExp:2, oopPct:14 },
+  BR: { name:"Brazil", pop:216, prev:8.8, undiag:38.4, preDM:9.0, costPP:2350, gdp:9800, wage:5800, workPop:69, daly:900, compRate:33, compMult:2.3, careHrs:7, cagr:2.0, popGr:0.5, costInfl:10.0, catExp:18, oopPct:30 },
+  NG: { name:"Nigeria", pop:224, prev:3.6, undiag:60, preDM:9.0, costPP:150, gdp:2200, wage:1500, workPop:54, daly:550, compRate:45, compMult:3.0, careHrs:12, cagr:2.5, popGr:2.4, costInfl:12.1, catExp:40, oopPct:70 },
+  ZA: { name:"South Africa", pop:60, prev:10.8, undiag:52.5, preDM:9.0, costPP:800, gdp:6000, wage:4500, workPop:65, daly:950, compRate:38, compMult:2.5, careHrs:9, cagr:2.2, popGr:0.8, costInfl:12.1, catExp:22, oopPct:45 },
+  AU: { name:"Australia", pop:26, prev:6.4, undiag:33.5, preDM:12.0, costPP:6500, gdp:64000, wage:52000, workPop:66, daly:480, compRate:26, compMult:2.0, careHrs:5, cagr:1.3, popGr:1.2, costInfl:8.7, catExp:2, oopPct:12 },
+  CA: { name:"Canada", pop:40, prev:7.7, undiag:30, preDM:12.0, costPP:6800, gdp:54000, wage:45000, workPop:66, daly:500, compRate:27, compMult:2.0, careHrs:5, cagr:1.4, popGr:0.8, costInfl:8.7, catExp:3, oopPct:10 },
+  MX: { name:"Mexico", pop:129, prev:16.9, undiag:38, preDM:13.0, costPP:1500, gdp:11000, wage:6500, workPop:67, daly:1200, compRate:40, compMult:2.5, careHrs:9, cagr:2.3, popGr:0.7, costInfl:10.0, catExp:20, oopPct:40 },
+  ID: { name:"Indonesia", pop:278, prev:10.6, undiag:73.7, preDM:12.0, costPP:250, gdp:4800, wage:3200, workPop:68, daly:800, compRate:40, compMult:2.8, careHrs:10, cagr:2.5, popGr:0.8, costInfl:12.3, catExp:30, oopPct:50 },
+  BD: { name:"Bangladesh", pop:173, prev:14.2, undiag:57, preDM:15.0, costPP:120, gdp:2700, wage:1800, workPop:66, daly:950, compRate:42, compMult:2.8, careHrs:10, cagr:2.8, popGr:1.0, costInfl:12.1, catExp:35, oopPct:65 },
+  EG: { name:"Egypt", pop:105, prev:20.9, undiag:45, preDM:11.0, costPP:500, gdp:4300, wage:3000, workPop:62, daly:1100, compRate:38, compMult:2.5, careHrs:9, cagr:2.5, popGr:1.6, costInfl:12.1, catExp:28, oopPct:55 },
+  SA: { name:"Saudi Arabia", pop:37, prev:18.7, undiag:36.4, preDM:13.0, costPP:1700, gdp:28000, wage:22000, workPop:72, daly:1300, compRate:35, compMult:2.2, careHrs:6, cagr:2.0, popGr:1.5, costInfl:12.1, catExp:8, oopPct:20 },
+  FR: { name:"France", pop:68, prev:5.3, undiag:30, preDM:8.0, costPP:4800, gdp:44000, wage:36000, workPop:62, daly:500, compRate:26, compMult:2.0, careHrs:5, cagr:1.2, popGr:0.2, costInfl:8.3, catExp:2, oopPct:8 },
+  KR: { name:"South Korea", pop:52, prev:6.8, undiag:36, preDM:10.0, costPP:3800, gdp:33000, wage:28000, workPop:72, daly:450, compRate:26, compMult:1.9, careHrs:5, cagr:1.5, popGr:-0.2, costInfl:12.3, catExp:4, oopPct:18 },
+  RU: { name:"Russia", pop:144, prev:5.6, undiag:49.8, preDM:9.0, costPP:600, gdp:12000, wage:8000, workPop:65, daly:650, compRate:35, compMult:2.5, careHrs:7, cagr:1.8, popGr:-0.3, costInfl:10.0, catExp:15, oopPct:35 },
+  TH: { name:"Thailand", pop:72, prev:9.7, undiag:47.3, preDM:14.0, costPP:600, gdp:7200, wage:5000, workPop:70, daly:800, compRate:33, compMult:2.3, careHrs:7, cagr:2.0, popGr:0.1, costInfl:12.3, catExp:12, oopPct:25 },
+};
+
+let charts = {};
+let activeScenarios = { optimistic: true, baseline: true, pessimistic: true };
+
+// ======== THEME TOGGLE ========
+function toggleTheme() {
+  const isLight = document.getElementById('themeToggle').checked;
+  document.documentElement.setAttribute('data-theme', isLight ? 'light' : 'dark');
+  document.getElementById('themeLabel').textContent = isLight ? 'Dark' : 'Light';
+  // Update chart colors on theme change
+  updateChartColors(isLight);
+}
+
+function updateChartColors(isLight) {
+  const textColor = isLight ? '#475569' : '#8899b0';
+  const gridColor = isLight ? 'rgba(148,163,184,0.25)' : 'rgba(42,58,82,0.4)';
+  const tickColor = isLight ? '#64748b' : '#5a6d85';
+  chartDefaults.plugins.legend.labels.color = textColor;
+  chartDefaults.scales.x.ticks.color = tickColor;
+  chartDefaults.scales.x.grid.color = gridColor;
+  chartDefaults.scales.y.ticks.color = tickColor;
+  chartDefaults.scales.y.grid.color = gridColor;
+  recalc();
+}
+
+// ======== TAB SWITCH ========
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  if (btn) btn.classList.add('active');
+  // Resize charts after tab switch
+  setTimeout(() => { Object.values(charts).forEach(c => { if(c) c.resize(); }); }, 50);
+}
+
+// ======== LOAD COUNTRY ========
+function loadCountry() {
+  const code = document.getElementById('countrySelect').value;
+  if (code === 'custom') return;
+  const c = COUNTRIES[code];
+  document.getElementById('population').value = c.pop;
+  document.getElementById('prevalence').value = c.prev;
+  document.getElementById('undiagnosed').value = c.undiag;
+  document.getElementById('prediabetes').value = c.preDM;
+  document.getElementById('directCost').value = c.costPP;
+  document.getElementById('gdpPerCapita').value = c.gdp;
+  document.getElementById('avgWage').value = c.wage;
+  document.getElementById('workingAgePct').value = c.workPop;
+  document.getElementById('compRate').value = c.compRate;
+  document.getElementById('compRateVal').textContent = c.compRate;
+  document.getElementById('compMult').value = c.compMult;
+  document.getElementById('compMultVal').textContent = c.compMult;
+  document.getElementById('careHrs').value = c.careHrs;
+  document.getElementById('careHrsVal').textContent = c.careHrs;
+  document.getElementById('cagr').value = c.cagr;
+  document.getElementById('cagrVal').textContent = c.cagr;
+  document.getElementById('popGrowth').value = c.popGr;
+  document.getElementById('popGrowthVal').textContent = c.popGr;
+  document.getElementById('costInfl').value = c.costInfl;
+  document.getElementById('costInflVal').textContent = c.costInfl;
+  recalc();
+}
+
+// ======== FORMAT ========
+function fmt(n, dec=1) {
+  if (n >= 1e12) return (n/1e12).toFixed(dec) + 'T';
+  if (n >= 1e9) return (n/1e9).toFixed(dec) + 'B';
+  if (n >= 1e6) return (n/1e6).toFixed(dec) + 'M';
+  if (n >= 1e3) return (n/1e3).toFixed(dec) + 'K';
+  return n.toFixed(dec);
+}
+
+// ======== RECALCULATE ========
+function recalc() {
+  const pop = parseFloat(document.getElementById('population').value) * 1e6;
+  const prev = parseFloat(document.getElementById('prevalence').value) / 100;
+  const undiag = parseFloat(document.getElementById('undiagnosed').value) / 100;
+  const preDM = parseFloat(document.getElementById('prediabetes').value) / 100;
+  const costPP = parseFloat(document.getElementById('directCost').value);
+  const gdp = parseFloat(document.getElementById('gdpPerCapita').value);
+  const wage = parseFloat(document.getElementById('avgWage').value);
+  const workPop = parseFloat(document.getElementById('workingAgePct').value) / 100;
+  const compRate = parseFloat(document.getElementById('compRate').value) / 100;
+  const compMult = parseFloat(document.getElementById('compMult').value);
+  const careHrs = parseFloat(document.getElementById('careHrs').value);
+
+  const diabetics = pop * prev;
+  const undiagnosed = diabetics * undiag;
+  const prediabetics = pop * preDM;
+  const complicated = diabetics * compRate;
+  const uncomplicated = diabetics * (1 - compRate);
+
+  // Costs
+  const directUncomplicated = uncomplicated * costPP;
+  const directComplicated = complicated * costPP * compMult;
+  const totalDirect = directUncomplicated + directComplicated;
+
+  // Indirect: absenteeism + presenteeism + reduced participation
+  const workingDiabetics = diabetics * workPop;
+  const absentDays = workingDiabetics * 5.5; // excess sick days
+  const absentCost = absentDays * (wage / 250);
+  const presentCost = workingDiabetics * 0.066 * wage; // 6.6% loss
+  const particLoss = workingDiabetics * 0.10; // 10% reduction
+  const particCost = particLoss * wage;
+  const totalIndirect = absentCost + presentCost + particCost;
+
+  // Caregiver
+  const caregiverHrs = complicated * careHrs * 52;
+  const caregiverCost = caregiverHrs * (wage / 2000); // hourly rate
+
+  const totalCost = totalDirect + totalIndirect + caregiverCost;
+
+  // DALYs
+  const code = document.getElementById('countrySelect').value;
+  const dalyRate = (code !== 'custom' && COUNTRIES[code]) ? COUNTRIES[code].daly : 1050;
+  const totalDalys = (pop / 100000) * dalyRate;
+
+  // Catastrophic
+  const catExpRate = (code !== 'custom' && COUNTRIES[code]) ? COUNTRIES[code].catExp : 20;
+
+  // === UPDATE DASHBOARD ===
+  document.getElementById('statPop').textContent = fmt(diabetics);
+  document.getElementById('statPopSub').textContent = (prev*100).toFixed(1) + '% prevalence';
+  document.getElementById('statUndiag').textContent = fmt(undiagnosed);
+  document.getElementById('statUndiagSub').textContent = (undiag*100).toFixed(1) + '% of diabetics';
+  document.getElementById('statCost').textContent = '$' + fmt(totalCost);
+  document.getElementById('statCostSub').textContent = 'Direct $' + fmt(totalDirect) + ' + Indirect $' + fmt(totalIndirect);
+  document.getElementById('statDaly').textContent = fmt(totalDalys);
+  document.getElementById('statPreDM').textContent = fmt(prediabetics);
+  document.getElementById('statComp').textContent = fmt(complicated);
+  document.getElementById('statCompSub').textContent = (compRate*100).toFixed(0) + '% complication rate';
+  document.getElementById('statWork').textContent = '$' + fmt(totalIndirect);
+  document.getElementById('statCare').textContent = fmt(caregiverHrs);
+
+  // Burden bar
+  const segments = [
+    { label: 'Direct (uncomplicated)', val: directUncomplicated, color: '#38bdf8' },
+    { label: 'Direct (complicated)', val: directComplicated, color: '#818cf8' },
+    { label: 'Absenteeism', val: absentCost, color: '#fbbf24' },
+    { label: 'Presenteeism', val: presentCost, color: '#fb923c' },
+    { label: 'Reduced participation', val: particCost, color: '#f87171' },
+    { label: 'Caregiver cost', val: caregiverCost, color: '#f472b6' },
+  ];
+  const barHtml = segments.map(s => {
+    const pct = (s.val / totalCost * 100);
+    return `<div style="width:${pct}%; background:${s.color}" title="${s.label}: $${fmt(s.val)} (${pct.toFixed(1)}%)">${pct > 8 ? pct.toFixed(0)+'%' : ''}</div>`;
+  }).join('');
+  document.getElementById('burdenBar').innerHTML = barHtml;
+  document.getElementById('burdenLegend').innerHTML = segments.map(s =>
+    `<div class="burden-legend-item"><div class="swatch" style="background:${s.color}"></div>${s.label}: $${fmt(s.val)}</div>`
+  ).join('');
+
+  // Cost breakdown doughnut
+  updateCostBreakdownChart(segments);
+
+  // Economic tab
+  document.getElementById('econDirect').textContent = '$' + fmt(totalDirect);
+  document.getElementById('econIndirect').textContent = '$' + fmt(totalIndirect);
+  const catFamilies = diabetics * catExpRate / 100;
+  document.getElementById('econCatastrophic').textContent = fmt(catFamilies) + ' families';
+  document.getElementById('econCatSub').textContent = catExpRate + '% catastrophic rate';
+
+  updateEconCharts(segments, totalDirect, totalIndirect, caregiverCost, costPP, compMult, compRate, diabetics);
+
+  // Workforce tab
+  document.getElementById('wfPartic').textContent = fmt(particLoss);
+  document.getElementById('wfPresent').textContent = fmt(workingDiabetics * 0.066 * 250) + ' days';
+  document.getElementById('wfAbsent').textContent = fmt(absentDays) + ' days';
+  const gdpImpact = totalCost / (pop * gdp) * 100;
+  document.getElementById('wfGdp').textContent = gdpImpact.toFixed(2) + '%';
+
+  updateWorkforceCharts(absentCost, presentCost, particCost, caregiverCost, totalDalys, diabetics, compRate);
+
+  recalcProjections();
+  updateCountryTab();
+}
+
+// ======== CHART UPDATES ========
+function destroyChart(key) { if (charts[key]) { charts[key].destroy(); charts[key] = null; } }
+
+let chartDefaults = {
+  responsive: true, maintainAspectRatio: false,
+  plugins: { legend: { labels: { color: '#8899b0', font: { family: "'DM Sans'" }, boxWidth: 12, padding: 12 } } },
+  scales: { x: { ticks: { color: '#5a6d85', font: { family: "'DM Sans'", size: 11 } }, grid: { color: 'rgba(42,58,82,0.4)' } },
+            y: { ticks: { color: '#5a6d85', font: { family: "'DM Sans'", size: 11 } }, grid: { color: 'rgba(42,58,82,0.4)' } } }
+};
+
+function updateCostBreakdownChart(segments) {
+  destroyChart('costBreakdown');
+  charts.costBreakdown = new Chart(document.getElementById('costBreakdownChart'), {
+    type: 'doughnut',
+    data: {
+      labels: segments.map(s => s.label),
+      datasets: [{ data: segments.map(s => s.val), backgroundColor: segments.map(s => s.color), borderWidth: 0 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, cutout: '65%',
+      plugins: { legend: { position: 'right', labels: { color: '#8899b0', font: { family: "'DM Sans'", size: 11 }, boxWidth: 10, padding: 8 } } } }
+  });
+}
+
+function updateEconCharts(segments, directTotal, indirectTotal, caregiverCost, costPP, compMult, compRate, diabetics) {
+  // Pie chart
+  destroyChart('econPie');
+  charts.econPie = new Chart(document.getElementById('econPieChart'), {
+    type: 'pie',
+    data: {
+      labels: ['Direct Medical', 'Indirect (Productivity)', 'Caregiver (Informal)'],
+      datasets: [{ data: [directTotal, indirectTotal, caregiverCost], backgroundColor: ['#38bdf8', '#fbbf24', '#f472b6'], borderWidth: 0 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { color: '#8899b0', font: { family: "'DM Sans'" }, boxWidth: 10, padding: 12 } } } }
+  });
+
+  // Payer chart
+  const code = document.getElementById('countrySelect').value;
+  const c = (code !== 'custom' && COUNTRIES[code]) ? COUNTRIES[code] : { oopPct: 40 };
+  const oop = c.oopPct || 40;
+  destroyChart('payer');
+  charts.payer = new Chart(document.getElementById('payerChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Out-of-Pocket', 'Government/Public', 'Insurance/Private'],
+      datasets: [{ data: [oop, Math.max(0, 100-oop-15), 15], backgroundColor: ['#f87171', '#38bdf8', '#34d399'], borderWidth: 0, borderRadius: 6 }]
+    },
+    options: { ...chartDefaults, indexAxis: 'y', plugins: { ...chartDefaults.plugins, legend: { display: false } },
+      scales: { x: { ...chartDefaults.scales.x, max: 100, title: { display: true, text: '% of direct costs', color: '#5a6d85' } },
+                y: { ...chartDefaults.scales.y } } }
+  });
+
+  // Complication waterfall
+  const base = costPP;
+  const complications = [
+    { name: 'Uncomplicated\n(baseline)', val: base, color: '#38bdf8' },
+    { name: 'Neuropathy', val: base * 1.5, color: '#818cf8' },
+    { name: 'Retinopathy', val: base * 2.0, color: '#fbbf24' },
+    { name: 'Nephropathy', val: base * 3.5, color: '#fb923c' },
+    { name: 'Foot Ulcer', val: base * 4.0, color: '#f87171' },
+    { name: 'Amputation', val: base * 8.0, color: '#f472b6' },
+    { name: 'CV Event', val: base * 6.0, color: '#e879f9' },
+  ];
+  destroyChart('complication');
+  charts.complication = new Chart(document.getElementById('complicationChart'), {
+    type: 'bar',
+    data: {
+      labels: complications.map(c => c.name),
+      datasets: [{ data: complications.map(c => c.val), backgroundColor: complications.map(c => c.color), borderWidth: 0, borderRadius: 6 }]
+    },
+    options: { ...chartDefaults, plugins: { ...chartDefaults.plugins, legend: { display: false } },
+      scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, title: { display: true, text: 'Annual cost per patient (USD)', color: '#5a6d85' } } } }
+  });
+}
+
+function updateWorkforceCharts(absent, present, partic, caregiver, dalys, diabetics, compRate) {
+  destroyChart('workforce');
+  charts.workforce = new Chart(document.getElementById('workforceChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Absenteeism', 'Presenteeism', 'Reduced\nParticipation', 'Caregiver\nProductivity'],
+      datasets: [{ data: [absent, present, partic, caregiver], backgroundColor: ['#fbbf24', '#fb923c', '#f87171', '#f472b6'], borderWidth: 0, borderRadius: 6 }]
+    },
+    options: { ...chartDefaults, plugins: { ...chartDefaults.plugins, legend: { display: false } },
+      scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, title: { display: true, text: 'Annual cost (USD)', color: '#5a6d85' } } } }
+  });
+
+  // DALY components
+  const yllPct = 55, yldPct = 45;
+  const yll = dalys * yllPct / 100;
+  const yldUncomp = dalys * yldPct / 100 * (1 - compRate);
+  const yldComp = dalys * yldPct / 100 * compRate;
+  destroyChart('daly');
+  charts.daly = new Chart(document.getElementById('dalyChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['YLL (Premature Death)', 'YLD (Uncomplicated)', 'YLD (Complicated)'],
+      datasets: [{ data: [yll, yldUncomp, yldComp], backgroundColor: ['#f87171', '#38bdf8', '#818cf8'], borderWidth: 0 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, cutout: '60%',
+      plugins: { legend: { position: 'bottom', labels: { color: '#8899b0', font: { family: "'DM Sans'" }, boxWidth: 10 } } } }
+  });
+}
+
+// ======== PROJECTIONS ========
+function setScenario(sc, el) {
+  activeScenarios[sc] = !activeScenarios[sc];
+  const cls = sc === 'optimistic' ? 'active-opt' : sc === 'baseline' ? 'active-base' : 'active-pess';
+  el.classList.toggle(cls);
+  recalcProjections();
+}
+
+function recalcProjections() {
+  const pop = parseFloat(document.getElementById('population').value) * 1e6;
+  const prev = parseFloat(document.getElementById('prevalence').value) / 100;
+  const costPP = parseFloat(document.getElementById('directCost').value);
+  const cagr = parseFloat(document.getElementById('cagr').value) / 100;
+  const popGr = parseFloat(document.getElementById('popGrowth').value) / 100;
+  const costInfl = parseFloat(document.getElementById('costInfl').value) / 100;
+  const compRate = parseFloat(document.getElementById('compRate').value) / 100;
+  const compMult = parseFloat(document.getElementById('compMult').value);
+
+  const scenarios = { optimistic: 0.65, baseline: 1.0, pessimistic: 1.30 };
+  const colors = { optimistic: '#34d399', baseline: '#38bdf8', pessimistic: '#f87171' };
+  const years = [];
+  for (let y = 2026; y <= 2056; y++) years.push(y);
+
+  const datasets = [];
+  const costDatasets = [];
+  const projData = {};
+
+  Object.entries(scenarios).forEach(([name, mult]) => {
+    if (!activeScenarios[name]) return;
+    const popData = [];
+    const costData = [];
+    years.forEach(y => {
+      const t = y - 2026;
+      const futPop = pop * Math.pow(1 + popGr, t);
+      const futPrev = prev * Math.pow(1 + cagr * mult, t);
+      const cappedPrev = Math.min(futPrev, 0.35); // cap at 35%
+      const cases = futPop * cappedPrev;
+      popData.push(cases / 1e6);
+
+      const futCostPP = costPP * Math.pow(1 + costInfl * 0.5, t); // half of inflation for real growth
+      const uncomplCases = cases * (1 - compRate);
+      const complCases = cases * compRate;
+      const totalCost = (uncomplCases * futCostPP + complCases * futCostPP * compMult) / 1e9;
+      costData.push(totalCost);
+    });
+    projData[name] = { pop: popData, cost: costData };
+    datasets.push({
+      label: name.charAt(0).toUpperCase() + name.slice(1),
+      data: popData, borderColor: colors[name], backgroundColor: colors[name] + '18',
+      fill: name === 'baseline', tension: 0.3, borderWidth: 2, pointRadius: 0
+    });
+    costDatasets.push({
+      label: name.charAt(0).toUpperCase() + name.slice(1),
+      data: costData, borderColor: colors[name], backgroundColor: colors[name] + '18',
+      fill: name === 'baseline', tension: 0.3, borderWidth: 2, pointRadius: 0
+    });
+  });
+
+  // Update projection stats
+  const base = projData.baseline || projData[Object.keys(projData)[0]];
+  if (base) {
+    document.getElementById('proj5yr').textContent = base.pop[5] ? base.pop[5].toFixed(1) + 'M' : '—';
+    document.getElementById('proj5yrCost').textContent = base.cost[5] ? '$' + base.cost[5].toFixed(1) + 'B direct costs' : '—';
+    document.getElementById('proj15yr').textContent = base.pop[15] ? base.pop[15].toFixed(1) + 'M' : '—';
+    document.getElementById('proj15yrCost').textContent = base.cost[15] ? '$' + base.cost[15].toFixed(1) + 'B direct costs' : '—';
+    document.getElementById('proj30yr').textContent = base.pop[30] ? base.pop[30].toFixed(1) + 'M' : '—';
+    document.getElementById('proj30yrCost').textContent = base.cost[30] ? '$' + base.cost[30].toFixed(1) + 'B direct costs' : '—';
+  }
+
+  destroyChart('projection');
+  charts.projection = new Chart(document.getElementById('projectionChart'), {
+    type: 'line', data: { labels: years, datasets },
+    options: { ...chartDefaults, plugins: { ...chartDefaults.plugins },
+      scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, title: { display: true, text: 'Diabetic population (millions)', color: '#5a6d85' } } } }
+  });
+
+  destroyChart('costProjection');
+  charts.costProjection = new Chart(document.getElementById('costProjectionChart'), {
+    type: 'line', data: { labels: years, datasets: costDatasets },
+    options: { ...chartDefaults, plugins: { ...chartDefaults.plugins },
+      scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, title: { display: true, text: 'Direct cost (USD billions)', color: '#5a6d85' } } } }
+  });
+}
+
+// ======== COUNTRY COMPARISON ========
+function updateCountryTab() {
+  const entries = Object.entries(COUNTRIES).sort((a,b) => (b[1].pop * b[1].prev/100) - (a[1].pop * a[1].prev/100));
+
+  // Table
+  const tbody = document.getElementById('countryTableBody');
+  tbody.innerHTML = entries.map(([code, c]) => {
+    const dPop = c.pop * c.prev / 100;
+    const natCost = dPop * c.costPP / 1000;
+    return `<tr>
+      <td><strong>${c.name}</strong></td>
+      <td class="num">${c.pop}</td>
+      <td class="num">${c.prev}%</td>
+      <td class="num">${dPop.toFixed(1)}</td>
+      <td class="num">${c.undiag}%</td>
+      <td class="num">$${c.costPP.toLocaleString()}</td>
+      <td class="num">$${natCost.toFixed(1)}B</td>
+      <td class="num">${c.daly.toLocaleString()}</td>
+    </tr>`;
+  }).join('');
+
+  // Bar chart - top 12
+  const top12 = entries.slice(0, 12);
+  destroyChart('countryComp');
+  charts.countryComp = new Chart(document.getElementById('countryCompChart'), {
+    type: 'bar',
+    data: {
+      labels: top12.map(([_, c]) => c.name),
+      datasets: [
+        { label: 'Diabetics (M)', data: top12.map(([_, c]) => c.pop * c.prev / 100), backgroundColor: '#38bdf8', borderRadius: 4, borderWidth: 0, yAxisID: 'y' },
+        { label: 'Cost/Patient (USD)', data: top12.map(([_, c]) => c.costPP), backgroundColor: '#fbbf2480', borderColor: '#fbbf24', type: 'line', borderWidth: 2, pointRadius: 4, yAxisID: 'y1' },
+      ]
+    },
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#8899b0', font: { family: "'DM Sans'" }, boxWidth: 10 } } },
+      scales: {
+        x: { ticks: { color: '#5a6d85', font: { family: "'DM Sans'", size: 10 }, maxRotation: 45 }, grid: { color: 'rgba(42,58,82,0.3)' } },
+        y: { position: 'left', ticks: { color: '#38bdf8', font: { family: "'DM Sans'", size: 11 } }, grid: { color: 'rgba(42,58,82,0.3)' }, title: { display: true, text: 'Diabetic population (M)', color: '#38bdf8' } },
+        y1: { position: 'right', ticks: { color: '#fbbf24', font: { family: "'DM Sans'", size: 11 } }, grid: { display: false }, title: { display: true, text: 'Cost per patient (USD)', color: '#fbbf24' } }
+      }
+    }
+  });
+}
+
+// ======== INIT ========
+Chart.defaults.font.family = "'DM Sans'";
+loadCountry();
+</script>
+</body>
+</html>

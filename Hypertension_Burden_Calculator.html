@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hypertension Global Burden Calculator & Visualizer</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,500;0,9..40,700;1,9..40,400&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0B1120;
+  --bg2: #111827;
+  --bg3: #1a2332;
+  --card: #162032;
+  --card-hover: #1d2b42;
+  --border: #2a3a52;
+  --border-light: #334466;
+  --text: #e2e8f0;
+  --text-dim: #8899b0;
+  --text-muted: #5a6d85;
+  --accent: #f87171;
+  --accent2: #fb923c;
+  --accent3: #34d399;
+  --warn: #fbbf24;
+  --danger: #f87171;
+  --pink: #f472b6;
+  --orange: #fb923c;
+  --blue: #38bdf8;
+  --purple: #818cf8;
+  --serif: 'Instrument Serif', Georgia, serif;
+  --sans: 'DM Sans', system-ui, sans-serif;
+  --radius: 12px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.3);
+}
+
+[data-theme="light"] {
+  --bg: #f0f4f8; --bg2: #e2e8f0; --bg3: #dde4ed; --card: #ffffff; --card-hover: #f8fafc;
+  --border: #cbd5e1; --border-light: #94a3b8; --text: #1e293b; --text-dim: #475569; --text-muted: #64748b;
+  --accent: #dc2626; --accent2: #ea580c; --accent3: #059669; --warn: #d97706; --danger: #dc2626;
+  --pink: #db2777; --orange: #ea580c; --blue: #0284c7; --purple: #6366f1;
+  --shadow: 0 4px 24px rgba(0,0,0,0.08);
+}
+[data-theme="light"] .site-header { background: linear-gradient(135deg, #5f1a1a 0%, #691b2d 50%, #5f1a1a 100%); }
+[data-theme="light"] .stat-value { color: var(--text); }
+[data-theme="light"] .card-title { color: var(--text); }
+[data-theme="light"] .section-header h2 { color: var(--text); }
+[data-theme="light"] .tab.active { background: var(--card); color: var(--text); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+[data-theme="light"] .data-table tr:hover td { background: rgba(220,38,38,0.04); }
+[data-theme="light"] .burden-bar div { color: #fff; }
+[data-theme="light"] input[type="range"] { background: var(--bg2); border-color: var(--border); }
+[data-theme="light"] input[type="range"]::-webkit-slider-thumb { border-color: #fff; box-shadow: 0 0 8px rgba(220,38,38,0.3); }
+[data-theme="light"] .methodology { background: #f1f5f9; }
+[data-theme="light"] .info-tip:hover::after { background: #fff; }
+[data-theme="light"] .input-group select option { background: #fff; }
+
+.theme-toggle { position: absolute; top: 50%; right: 32px; transform: translateY(-50%); z-index: 10; display: flex; align-items: center; gap: 10px; }
+.theme-toggle-label { font-size: 0.78rem; color: rgba(255,255,255,0.6); font-weight: 500; }
+.theme-switch { position: relative; width: 52px; height: 28px; cursor: pointer; }
+.theme-switch input { opacity: 0; width: 0; height: 0; }
+.theme-switch .slider { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.15); border-radius: 28px; transition: 0.3s; border: 1px solid rgba(255,255,255,0.2); }
+.theme-switch .slider::before { content: ''; position: absolute; height: 20px; width: 20px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: 0.3s; box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
+.theme-switch input:checked + .slider { background: rgba(255,255,255,0.3); }
+.theme-switch input:checked + .slider::before { transform: translateX(24px); }
+.theme-icon { font-size: 1.1rem; line-height: 1; }
+
+.guide-section { margin-bottom: 32px; }
+.guide-section h3 { font-family: var(--serif); font-size: 1.25rem; color: var(--accent); margin-bottom: 12px; font-weight: 400; }
+.guide-step { display: flex; gap: 16px; margin-bottom: 16px; padding: 16px; background: var(--bg2); border-radius: 10px; border: 1px solid var(--border); }
+.guide-step-num { flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; }
+.guide-step-content { flex: 1; }
+.guide-step-content h4 { font-size: 0.95rem; color: var(--text); margin-bottom: 4px; font-weight: 600; }
+.guide-step-content p { font-size: 0.84rem; color: var(--text-dim); line-height: 1.6; }
+.guide-tab-card { padding: 20px; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 12px; }
+.guide-tab-card h4 { font-size: 0.95rem; color: var(--text); margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+.guide-tab-card h4 .gtag { display: inline-flex; padding: 2px 10px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+.guide-tab-card p { font-size: 0.84rem; color: var(--text-dim); line-height: 1.6; }
+.guide-metric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+.guide-metric { padding: 12px 16px; background: var(--card); border: 1px solid var(--border); border-radius: 8px; }
+.guide-metric dt { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); font-weight: 500; }
+.guide-metric dd { font-size: 0.88rem; color: var(--text); margin-top: 2px; font-weight: 500; }
+@media (max-width: 768px) { .guide-metric-grid { grid-template-columns: 1fr; } .theme-toggle-label { display: none; } }
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+body { font-family: var(--sans); background: var(--bg); color: var(--text); line-height: 1.6; min-height: 100vh; }
+
+.site-header { background: linear-gradient(135deg, #1a0a0a 0%, #2e0f1a 50%, #1a0a0a 100%); border-bottom: 1px solid var(--border); padding: 32px 0; position: relative; overflow: hidden; }
+.site-header::before { content:''; position:absolute; top:-50%; left:-50%; width:200%; height:200%; background: radial-gradient(ellipse at 30% 50%, rgba(248,113,113,0.06) 0%, transparent 50%), radial-gradient(ellipse at 70% 50%, rgba(251,146,60,0.05) 0%, transparent 50%); pointer-events:none; }
+.header-inner { max-width: 1400px; margin: 0 auto; padding: 0 32px; position: relative; z-index:1; }
+.header-inner h1 { font-family: var(--serif); font-size: 2.8rem; font-weight: 400; letter-spacing: -0.02em; color: #fff; }
+.header-inner h1 span { color: var(--accent); }
+.header-sub { font-size: 1.05rem; color: var(--text-dim); margin-top: 8px; font-weight: 300; }
+.header-badges { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+.badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 14px; border-radius: 100px; font-size: 0.75rem; font-weight: 500; letter-spacing: 0.02em; border: 1px solid var(--border); background: rgba(255,255,255,0.03); color: var(--text-dim); }
+.badge .dot { width: 6px; height: 6px; border-radius: 50%; }
+
+.container { max-width: 1400px; margin: 0 auto; padding: 32px; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+
+.card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; transition: border-color 0.2s; }
+.card:hover { border-color: var(--border-light); }
+.card-title { font-family: var(--serif); font-size: 1.35rem; margin-bottom: 16px; color: #fff; display: flex; align-items: center; gap: 10px; }
+.card-title .icon { font-size: 1.1rem; }
+
+.stat-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; text-align: center; position: relative; overflow: hidden; }
+.stat-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; }
+.stat-card.blue::before { background: linear-gradient(90deg, var(--blue), var(--purple)); }
+.stat-card.green::before { background: linear-gradient(90deg, var(--accent3), #22d3ee); }
+.stat-card.amber::before { background: linear-gradient(90deg, var(--warn), var(--orange)); }
+.stat-card.red::before { background: linear-gradient(90deg, var(--danger), var(--pink)); }
+.stat-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 8px; font-weight: 500; }
+.stat-value { font-family: var(--serif); font-size: 2rem; color: #fff; font-weight: 400; }
+.stat-sub { font-size: 0.8rem; color: var(--text-dim); margin-top: 4px; }
+
+.input-group { margin-bottom: 16px; }
+.input-group label { display: block; font-size: 0.8rem; color: var(--text-dim); margin-bottom: 6px; font-weight: 500; letter-spacing: 0.02em; }
+.input-group input, .input-group select { width: 100%; padding: 10px 14px; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: var(--sans); font-size: 0.9rem; outline: none; transition: border-color 0.2s; }
+.input-group input:focus, .input-group select:focus { border-color: var(--accent); }
+.input-group select option { background: var(--bg2); }
+.input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.input-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+.slider-group { margin-bottom: 16px; }
+.slider-group label { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-dim); margin-bottom: 6px; font-weight: 500; }
+.slider-group label span { color: var(--accent); font-family: var(--sans); }
+input[type="range"] { -webkit-appearance: none; width: 100%; height: 6px; border-radius: 3px; background: var(--bg2); outline: none; border: 1px solid var(--border); }
+input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--accent); cursor: pointer; border: 2px solid var(--bg); box-shadow: 0 0 8px rgba(248,113,113,0.3); }
+
+.tabs { display: flex; gap: 4px; background: var(--bg2); border-radius: 10px; padding: 4px; margin-bottom: 24px; border: 1px solid var(--border); overflow-x: auto; }
+.tab { padding: 10px 20px; border-radius: 8px; font-size: 0.85rem; font-weight: 500; color: var(--text-dim); cursor: pointer; transition: all 0.2s; border: none; background: none; white-space: nowrap; font-family: var(--sans); }
+.tab:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+.tab.active { background: var(--card); color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+.tab-content { display: none; }
+.tab-content.active { display: block; animation: fadeIn 0.3s; }
+@keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+.scenario-bar { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+.scenario-pill { padding: 8px 18px; border-radius: 100px; font-size: 0.8rem; font-weight: 500; cursor: pointer; transition: all 0.2s; border: 1px solid var(--border); background: transparent; color: var(--text-dim); font-family: var(--sans); }
+.scenario-pill:hover { border-color: var(--text-dim); }
+.scenario-pill.active-opt { background: rgba(52,211,153,0.12); border-color: var(--accent3); color: var(--accent3); }
+.scenario-pill.active-base { background: rgba(248,113,113,0.12); border-color: var(--accent); color: var(--accent); }
+.scenario-pill.active-pess { background: rgba(251,146,60,0.12); border-color: var(--orange); color: var(--orange); }
+
+.chart-container { position: relative; width: 100%; height: 360px; }
+.chart-container-sm { position: relative; width: 100%; height: 280px; }
+
+.data-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+.data-table th { background: var(--bg2); color: var(--text-dim); font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.72rem; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); position: sticky; top:0; }
+.data-table td { padding: 10px 14px; border-bottom: 1px solid rgba(42,58,82,0.5); }
+.data-table tr:hover td { background: rgba(248,113,113,0.03); }
+.data-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.table-scroll { max-height: 500px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius); }
+
+.section-header { margin: 40px 0 24px; }
+.section-header h2 { font-family: var(--serif); font-size: 1.8rem; color: #fff; font-weight: 400; }
+.section-header p { color: var(--text-dim); font-size: 0.9rem; margin-top: 4px; }
+.divider { width: 48px; height: 3px; background: linear-gradient(90deg, var(--accent), var(--orange)); border-radius: 2px; margin-top: 12px; }
+
+.burden-bar { display: flex; height: 32px; border-radius: 8px; overflow: hidden; margin: 12px 0; }
+.burden-bar div { display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 600; color: #fff; transition: width 0.5s ease; min-width: 0; }
+.burden-legend { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 8px; }
+.burden-legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: var(--text-dim); }
+.burden-legend-item .swatch { width: 10px; height: 10px; border-radius: 3px; }
+
+@media (max-width: 1100px) { .grid-2 { grid-template-columns: 1fr; } .grid-3 { grid-template-columns: 1fr; } }
+@media (max-width: 768px) { .grid-4 { grid-template-columns: 1fr 1fr; } .header-inner h1 { font-size: 2rem; } .container { padding: 16px; } .input-row, .input-row-3 { grid-template-columns: 1fr; } }
+
+.info-tip { display: inline-block; width: 16px; height: 16px; border-radius: 50%; background: var(--border); color: var(--text-dim); font-size: 0.65rem; text-align: center; line-height: 16px; cursor: help; position: relative; font-weight: 700; margin-left: 4px; }
+.info-tip:hover::after { content: attr(data-tip); position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--bg2); border: 1px solid var(--border); color: var(--text); padding: 8px 12px; border-radius: 8px; font-size: 0.75rem; font-weight: 400; white-space: nowrap; z-index: 99; max-width: 280px; white-space: normal; box-shadow: var(--shadow); }
+
+.methodology { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-top: 24px; font-size: 0.82rem; color: var(--text-dim); line-height: 1.7; }
+.methodology h4 { color: var(--text); margin-bottom: 8px; font-size: 0.9rem; }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="theme-toggle">
+      <span class="theme-icon">&#9790;</span>
+      <label class="theme-switch"><input type="checkbox" id="themeToggle" onchange="toggleTheme()"><span class="slider"></span></label>
+      <span class="theme-icon">&#9788;</span>
+      <span class="theme-toggle-label" id="themeLabel">Light</span>
+    </div>
+    <h1>Hypertension <span>Burden</span> Calculator</h1>
+    <p class="header-sub">The silent killer: economic, cardiovascular & workforce impact modeling across 12 countries with awareness-treatment-control cascade</p>
+    <div class="header-badges">
+      <span class="badge"><span class="dot" style="background:var(--accent3)"></span> NCD-RisC 2019</span>
+      <span class="badge"><span class="dot" style="background:var(--blue)"></span> GBD 2021</span>
+      <span class="badge"><span class="dot" style="background:var(--purple)"></span> WHO GHO</span>
+      <span class="badge"><span class="dot" style="background:var(--warn)"></span> HEARTS Framework</span>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="tabs" id="mainTabs">
+    <button class="tab active" onclick="switchTab('guide',this)">&#128214; Guide</button>
+    <button class="tab" onclick="switchTab('dashboard',this)">Dashboard</button>
+    <button class="tab" onclick="switchTab('projections',this)">Projections &amp; Scenarios</button>
+    <button class="tab" onclick="switchTab('economic',this)">Economic Burden</button>
+    <button class="tab" onclick="switchTab('workforce',this)">Workforce &amp; Societal</button>
+    <button class="tab" onclick="switchTab('country',this)">Country Comparison</button>
+    <button class="tab" onclick="switchTab('methodology',this)">Methodology</button>
+  </div>
+
+  <!-- GUIDE -->
+  <div class="tab-content active" id="tab-guide">
+    <div class="section-header">
+      <h2>How to Use This Calculator</h2>
+      <p>Model the awareness-treatment-control cascade and its massive cardiovascular consequences</p>
+      <div class="divider"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="icon">&#127919;</span> Who Is This For?</div>
+      <div class="methodology" style="margin-top:0">
+        <p>This tool is designed for <strong>cardiologists, public health researchers, policy analysts, and NCD program managers</strong> who need to model the burden of hypertension — the world's leading modifiable risk factor for cardiovascular death. With 1.4 billion adults affected and only 23% controlled globally, hypertension drives more DALYs than any other risk factor. This calculator models the awareness-treatment-control cascade, complication costs (stroke, MI, heart failure), workforce impact, and future projections.</p>
+      </div>
+    </div>
+    <div class="guide-section" style="margin-top:28px">
+      <h3>Quick Start</h3>
+      <div class="guide-step"><div class="guide-step-num">1</div><div class="guide-step-content"><h4>Select a Country</h4><p>Go to <strong>Dashboard</strong> and pick a country. Defaults load for prevalence, awareness/treatment/control rates, per-patient costs, medication costs, and complication rates from NCD-RisC, WHO, and country-specific studies.</p></div></div>
+      <div class="guide-step"><div class="guide-step-num">2</div><div class="guide-step-content"><h4>Customize the Cascade</h4><p>The awareness-treatment-control cascade is the key lever. Adjust awareness, treatment, and control rates to model different policy scenarios. Only 4 countries achieve >50% control: Canada, Costa Rica, Iceland, and South Korea.</p></div></div>
+      <div class="guide-step"><div class="guide-step-num">3</div><div class="guide-step-content"><h4>Explore Tabs</h4><p>Each tab shows a different dimension. The Economic tab shows complication costs (stroke, MI, heart failure). The Workforce tab quantifies presenteeism and GDP impact.</p></div></div>
+    </div>
+    <div class="guide-section">
+      <h3>Key Metrics</h3>
+      <div class="guide-metric-grid">
+        <div class="guide-metric"><dt>Awareness Rate</dt><dd>% of hypertensives who know they have it</dd></div>
+        <div class="guide-metric"><dt>Treatment Rate</dt><dd>% of aware hypertensives receiving medication</dd></div>
+        <div class="guide-metric"><dt>Control Rate</dt><dd>% of treated hypertensives at target BP</dd></div>
+        <div class="guide-metric"><dt>PAF (Stroke)</dt><dd>Population Attributable Fraction: 29-50% of strokes caused by HTN</dd></div>
+        <div class="guide-metric"><dt>WHO Best Buy</dt><dd>Interventions costing ≤$100/DALY averted — HTN treatment qualifies</dd></div>
+        <div class="guide-metric"><dt>DALY</dt><dd>Disability-Adjusted Life Year: 1 DALY = 1 year of healthy life lost</dd></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="tab-content" id="tab-dashboard">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title"><span class="icon">&#9881;</span> Model Parameters</div>
+        <div class="input-group">
+          <label>Country / Region Preset</label>
+          <select id="countrySelect" onchange="loadCountry()">
+            <option value="custom">Custom Values</option>
+            <option value="IN" selected>India</option>
+            <option value="US">United States</option>
+            <option value="CN">China</option>
+            <option value="UK">United Kingdom</option>
+            <option value="DE">Germany</option>
+            <option value="JP">Japan</option>
+            <option value="BR">Brazil</option>
+            <option value="NG">Nigeria</option>
+            <option value="RU">Russia</option>
+            <option value="ID">Indonesia</option>
+            <option value="CA">Canada</option>
+            <option value="KR">South Korea</option>
+          </select>
+        </div>
+        <div class="input-row">
+          <div class="input-group"><label>Total Population (millions)</label><input type="number" id="population" value="1428" step="1" onchange="recalc()"></div>
+          <div class="input-group"><label>Hypertension Prevalence (%)<span class="info-tip" data-tip="Age-standardized, adults 30-79, NCD-RisC">?</span></label><input type="number" id="prevalence" value="33" step="0.1" onchange="recalc()"></div>
+        </div>
+        <div class="input-row-3">
+          <div class="input-group"><label>Awareness (%)<span class="info-tip" data-tip="% who know they have HTN">?</span></label><input type="number" id="awareness" value="45" step="1" onchange="recalc()"></div>
+          <div class="input-group"><label>Treatment (%)<span class="info-tip" data-tip="% of aware patients on medication">?</span></label><input type="number" id="treatment" value="32" step="1" onchange="recalc()"></div>
+          <div class="input-group"><label>Control (%)<span class="info-tip" data-tip="% of treated patients at target BP">?</span></label><input type="number" id="control" value="13" step="1" onchange="recalc()"></div>
+        </div>
+        <div class="input-row">
+          <div class="input-group"><label>Direct Cost / Patient / Year (USD)</label><input type="number" id="directCost" value="50" step="5" onchange="recalc()"></div>
+          <div class="input-group"><label>Medication Cost / Patient / Year (USD)</label><input type="number" id="medCost" value="4" step="1" onchange="recalc()"></div>
+        </div>
+        <div class="input-row">
+          <div class="input-group"><label>GDP Per Capita (USD)</label><input type="number" id="gdpPerCapita" value="2500" step="100" onchange="recalc()"></div>
+          <div class="input-group"><label>Avg Annual Wage (USD)</label><input type="number" id="avgWage" value="2100" step="100" onchange="recalc()"></div>
+        </div>
+        <div class="input-group"><label>Working-Age Population (%)</label><input type="number" id="workingAgePct" value="67" step="1" onchange="recalc()"></div>
+        <div class="slider-group">
+          <label>Stroke Event Rate (per 1000 HTN patients/yr) <span id="strokeRateVal">5</span></label>
+          <input type="range" id="strokeRate" min="1" max="15" value="5" oninput="document.getElementById('strokeRateVal').textContent=this.value; recalc()">
+        </div>
+        <div class="slider-group">
+          <label>MI Event Rate (per 1000 HTN patients/yr) <span id="miRateVal">3</span></label>
+          <input type="range" id="miRate" min="1" max="10" value="3" oninput="document.getElementById('miRateVal').textContent=this.value; recalc()">
+        </div>
+        <div class="slider-group">
+          <label>Heart Failure Rate (per 1000 HTN patients/yr) <span id="hfRateVal">4</span></label>
+          <input type="range" id="hfRate" min="1" max="12" value="4" oninput="document.getElementById('hfRateVal').textContent=this.value; recalc()">
+        </div>
+      </div>
+
+      <div>
+        <div class="grid-2" style="margin-bottom:24px">
+          <div class="stat-card red">
+            <div class="stat-label">Hypertensive Population</div>
+            <div class="stat-value" id="statPop">—</div>
+            <div class="stat-sub" id="statPopSub">—</div>
+          </div>
+          <div class="stat-card amber">
+            <div class="stat-label">Unaware</div>
+            <div class="stat-value" id="statUnaware">—</div>
+            <div class="stat-sub" id="statUnawareSub">—</div>
+          </div>
+          <div class="stat-card green">
+            <div class="stat-label">Total Annual Cost</div>
+            <div class="stat-value" id="statCost">—</div>
+            <div class="stat-sub" id="statCostSub">—</div>
+          </div>
+          <div class="stat-card blue">
+            <div class="stat-label">DALYs Lost</div>
+            <div class="stat-value" id="statDaly">—</div>
+            <div class="stat-sub">years of healthy life</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title"><span class="icon">&#128200;</span> Cost Breakdown</div>
+          <div class="burden-bar" id="burdenBar"></div>
+          <div class="burden-legend" id="burdenLegend"></div>
+          <div class="chart-container-sm" style="margin-top:16px"><canvas id="costBreakdownChart"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-4" style="margin-top:24px">
+      <div class="stat-card red">
+        <div class="stat-label">Controlled</div>
+        <div class="stat-value" id="statControlled">—</div>
+        <div class="stat-sub" id="statControlledSub">—</div>
+      </div>
+      <div class="stat-card amber">
+        <div class="stat-label">CV Events / Year</div>
+        <div class="stat-value" id="statCV">—</div>
+        <div class="stat-sub">stroke + MI + HF</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-label">Workforce Impact</div>
+        <div class="stat-value" id="statWork">—</div>
+        <div class="stat-sub">productivity loss/year</div>
+      </div>
+      <div class="stat-card blue">
+        <div class="stat-label">Life Yrs Lost (uncontrolled)</div>
+        <div class="stat-value">5 yrs</div>
+        <div class="stat-sub">from age 30 if uncontrolled</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROJECTIONS -->
+  <div class="tab-content" id="tab-projections">
+    <div class="section-header">
+      <h2>Future Burden Projections</h2>
+      <p>Hypertension prevalence doubled from 650M (1990) to 1.4B (2024) — projected to reach 2B by 2050</p>
+      <div class="divider"></div>
+    </div>
+    <div class="scenario-bar">
+      <button class="scenario-pill active-opt" onclick="setScenario('optimistic', this)">&#x1F7E2; Optimistic (HEARTS + Salt Reduction)</button>
+      <button class="scenario-pill active-base" onclick="setScenario('baseline', this)">&#x1F534; Baseline (Current Trends)</button>
+      <button class="scenario-pill active-pess" onclick="setScenario('pessimistic', this)">&#x1F7E0; Pessimistic (Urbanization + Sodium)</button>
+    </div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">Hypertensive Population Projections</div><div class="chart-container"><canvas id="projectionChart"></canvas></div></div>
+      <div class="card"><div class="card-title">Cumulative Economic Burden</div><div class="chart-container"><canvas id="costProjectionChart"></canvas></div></div>
+    </div>
+    <div class="grid-3" style="margin-top:24px">
+      <div class="stat-card red"><div class="stat-label">5-Year (2031)</div><div class="stat-value" id="proj5yr">—</div><div class="stat-sub" id="proj5yrCost">—</div></div>
+      <div class="stat-card amber"><div class="stat-label">15-Year (2041)</div><div class="stat-value" id="proj15yr">—</div><div class="stat-sub" id="proj15yrCost">—</div></div>
+      <div class="stat-card blue"><div class="stat-label">30-Year (2056)</div><div class="stat-value" id="proj30yr">—</div><div class="stat-sub" id="proj30yrCost">—</div></div>
+    </div>
+    <div class="card" style="margin-top:24px">
+      <div class="card-title">Projection Parameters</div>
+      <div class="input-row-3">
+        <div class="slider-group"><label>Prevalence CAGR (%) <span id="cagrVal">1.7</span></label><input type="range" id="cagr" min="0.5" max="4" value="1.7" step="0.1" oninput="document.getElementById('cagrVal').textContent=this.value; recalcProjections()"></div>
+        <div class="slider-group"><label>Pop. Growth Rate (%) <span id="popGrowthVal">0.8</span></label><input type="range" id="popGrowth" min="-0.5" max="3" value="0.8" step="0.1" oninput="document.getElementById('popGrowthVal').textContent=this.value; recalcProjections()"></div>
+        <div class="slider-group"><label>Healthcare Cost Inflation (%) <span id="costInflVal">12.1</span></label><input type="range" id="costInfl" min="2" max="18" value="12.1" step="0.5" oninput="document.getElementById('costInflVal').textContent=this.value; recalcProjections()"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ECONOMIC -->
+  <div class="tab-content" id="tab-economic">
+    <div class="section-header"><h2>Economic Burden Deep Dive</h2><p>Complication costs, medication economics, and the cost-effectiveness case for treatment</p><div class="divider"></div></div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">Cost Distribution</div><div class="chart-container"><canvas id="econPieChart"></canvas></div></div>
+      <div class="card"><div class="card-title">Complication Cost per Event (USD)</div><div class="chart-container"><canvas id="compChart"></canvas></div></div>
+    </div>
+    <div class="grid-3" style="margin-top:24px">
+      <div class="stat-card red"><div class="stat-label">Direct Medical Costs</div><div class="stat-value" id="econDirect">—</div><div class="stat-sub">medication + monitoring + complications</div></div>
+      <div class="stat-card amber"><div class="stat-label">Indirect Costs</div><div class="stat-value" id="econIndirect">—</div><div class="stat-sub">productivity losses</div></div>
+      <div class="stat-card green"><div class="stat-label">Cost per DALY Averted</div><div class="stat-value" id="econCostEffective">—</div><div class="stat-sub">WHO Best Buy: ≤$100/DALY</div></div>
+    </div>
+    <div class="card" style="margin-top:24px">
+      <div class="card-title">Awareness-Treatment-Control Cascade</div>
+      <div class="chart-container"><canvas id="cascadeChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- WORKFORCE -->
+  <div class="tab-content" id="tab-workforce">
+    <div class="section-header"><h2>Workforce &amp; Societal Impact</h2><p>Productivity loss, cardiovascular disability, and population-attributable risk</p><div class="divider"></div></div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">Productivity Loss Breakdown</div><div class="chart-container"><canvas id="workforceChart"></canvas></div></div>
+      <div class="card"><div class="card-title">DALY Components</div><div class="chart-container"><canvas id="dalyChart"></canvas></div></div>
+    </div>
+    <div class="grid-4" style="margin-top:24px">
+      <div class="stat-card red"><div class="stat-label">PAF for Stroke</div><div class="stat-value">39–50%</div><div class="stat-sub">of all strokes attributable to HTN</div></div>
+      <div class="stat-card amber"><div class="stat-label">PAF for Heart Failure</div><div class="stat-value">39–59%</div><div class="stat-sub">39% men, 59% women (Framingham)</div></div>
+      <div class="stat-card green"><div class="stat-label">Excess Sick Days</div><div class="stat-value">1.3/yr</div><div class="stat-sub">per hypertensive worker</div></div>
+      <div class="stat-card blue"><div class="stat-label">GDP Impact</div><div class="stat-value" id="wfGdp">—</div><div class="stat-sub">% of national GDP</div></div>
+    </div>
+    <div class="card" style="margin-top:24px">
+      <div class="card-title">Salt Intake &amp; Cardiovascular Risk</div>
+      <div class="grid-3">
+        <div style="text-align:center; padding:16px"><div style="font-size:2.4rem; font-family:var(--serif); color:var(--warn)">17.7g</div><div style="font-size:0.82rem; color:var(--text-dim); margin-top:4px">China's daily salt intake (WHO target: &lt;5g)</div></div>
+        <div style="text-align:center; padding:16px"><div style="font-size:2.4rem; font-family:var(--serif); color:var(--danger)">30–50%</div><div style="font-size:0.82rem; color:var(--text-dim); margin-top:4px">HTN attributable to high sodium (salt-sensitive)</div></div>
+        <div style="text-align:center; padding:16px"><div style="font-size:2.4rem; font-family:var(--serif); color:var(--accent3)">15–20%</div><div style="font-size:0.82rem; color:var(--text-dim); margin-top:4px">HTN reduction achievable via salt policy</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COUNTRY -->
+  <div class="tab-content" id="tab-country">
+    <div class="section-header"><h2>Country Comparison</h2><p>Side-by-side hypertension metrics across 12 countries</p><div class="divider"></div></div>
+    <div class="card"><div class="card-title">Prevalence &amp; Control Rate Comparison</div><div class="chart-container" style="height:450px"><canvas id="countryCompChart"></canvas></div></div>
+    <div class="card" style="margin-top:24px">
+      <div class="card-title">Full Country Data Table</div>
+      <div class="table-scroll">
+        <table class="data-table"><thead><tr>
+          <th>Country</th><th>Pop (M)</th><th>Prev (%)</th><th>HTN (M)</th><th>Awareness</th><th>Treatment</th><th>Control</th><th>Cost/Pt</th><th>DALYs/100K</th>
+        </tr></thead><tbody id="countryTableBody"></tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- METHODOLOGY -->
+  <div class="tab-content" id="tab-methodology">
+    <div class="section-header"><h2>Methodology &amp; Data Sources</h2><p>Transparency in modeling</p><div class="divider"></div></div>
+    <div class="card">
+      <div class="card-title">Projection Formula</div>
+      <div class="methodology">
+        <h4>Hybrid Growth Model</h4>
+        <p style="font-family:monospace; background:var(--bg); padding:12px; border-radius:8px; margin:12px 0; font-size:0.85rem; color:var(--accent)">Projected_HTN(year) = Current × (1 + CAGR)<sup>years</sup> × Scenario_Multiplier × (Pop_Future / Pop_Current)</p>
+        <p><strong>Scenarios:</strong> Optimistic (0.75x) models WHO HEARTS program + population-level salt reduction achieving 15-20% prevalence reduction. Baseline (1.00x) continues current trends. Pessimistic (1.20x) reflects accelerating urbanization, processed food consumption, and sedentary lifestyles in LMICs.</p>
+        <p style="margin-top:8px"><strong>Complication modeling:</strong> CV event rates (stroke, MI, HF) are applied per 1,000 hypertensives/year. Controlled patients have 35-40% lower event rates. Complication costs use country-specific hospital cost data.</p>
+      </div>
+    </div>
+    <div class="card" style="margin-top:24px">
+      <div class="card-title">Data Sources</div>
+      <div class="methodology">
+        <p><strong>Prevalence:</strong> NCD-RisC 2019 (age-standardized, 30-79). National health surveys where available.</p>
+        <p style="margin-top:8px"><strong>Cascade:</strong> WHO GHO. STEPS surveys. Country-specific studies from Lancet, JAMA, BMJ.</p>
+        <p style="margin-top:8px"><strong>Costs:</strong> WHO CHOICE. Systematic reviews of HTN cost-of-illness. USA: $131-219B national expenditure. Global: ~$820B (WHO 2023).</p>
+        <p style="margin-top:8px"><strong>DALYs:</strong> GBD 2021. High SBP as risk factor: ~211M DALYs across all CV outcomes.</p>
+      </div>
+    </div>
+    <div class="card" style="margin-top:24px"><div class="card-title">Limitations</div><div class="methodology"><p>Hypertension prevalence varies by measurement method (office vs ambulatory vs home BP). White-coat and masked hypertension affect accuracy. The cascade (awareness-treatment-control) represents population averages; sub-national and demographic variation is substantial. Complication rates are modeled as averages across controlled and uncontrolled patients; the true distribution is highly skewed toward uncontrolled individuals.</p></div></div>
+  </div>
+
+</div>
+
+<script>
+const COUNTRIES = {
+  IN: { name:"India", pop:1428, prev:33, awareness:45, treatment:32, control:13, costPP:50, medCost:4, gdp:2500, wage:2100, workPop:67, daly:380, strokeRate:5, miRate:3, hfRate:4, cagr:1.7, popGr:0.8, costInfl:12.1, strokeCost:3000, miCost:2500, hfCost:1500 },
+  US: { name:"United States", pop:335, prev:33, awareness:77, treatment:65, control:43, costPP:2800, medCost:200, gdp:76000, wage:63000, workPop:62, daly:200, strokeRate:4, miRate:3, hfRate:5, cagr:1.0, popGr:0.5, costInfl:8.7, strokeCost:75000, miCost:55000, hfCost:20000 },
+  CN: { name:"China", pop:1412, prev:34, awareness:47, treatment:37, control:16, costPP:400, medCost:100, gdp:12700, wage:9500, workPop:70, daly:350, strokeRate:6, miRate:3, hfRate:4, cagr:1.5, popGr:0.1, costInfl:12.3, strokeCost:8000, miCost:6000, hfCost:3000 },
+  UK: { name:"United Kingdom", pop:67, prev:27, awareness:65, treatment:55, control:34, costPP:1500, medCost:250, gdp:46000, wage:38000, workPop:63, daly:100, strokeRate:3, miRate:2, hfRate:3, cagr:0.8, popGr:0.3, costInfl:8.3, strokeCost:30000, miCost:25000, hfCost:12000 },
+  DE: { name:"Germany", pop:84, prev:32, awareness:72, treatment:63, control:42, costPP:1800, medCost:400, gdp:52000, wage:44000, workPop:64, daly:150, strokeRate:3, miRate:2, hfRate:3, cagr:0.8, popGr:-0.1, costInfl:8.3, strokeCost:35000, miCost:28000, hfCost:14000 },
+  JP: { name:"Japan", pop:124, prev:30, awareness:55, treatment:43, control:27, costPP:2000, medCost:350, gdp:34000, wage:30000, workPop:59, daly:90, strokeRate:4, miRate:2, hfRate:3, cagr:0.8, popGr:-0.5, costInfl:8.3, strokeCost:25000, miCost:20000, hfCost:10000 },
+  BR: { name:"Brazil", pop:216, prev:38, awareness:65, treatment:53, control:26, costPP:200, medCost:60, gdp:9800, wage:5800, workPop:69, daly:250, strokeRate:5, miRate:3, hfRate:4, cagr:1.5, popGr:0.5, costInfl:10.0, strokeCost:5000, miCost:4000, hfCost:2500 },
+  NG: { name:"Nigeria", pop:224, prev:31, awareness:30, treatment:18, control:6, costPP:20, medCost:5, gdp:2200, wage:1500, workPop:54, daly:500, strokeRate:7, miRate:4, hfRate:5, cagr:2.0, popGr:2.4, costInfl:12.1, strokeCost:2000, miCost:1500, hfCost:800 },
+  RU: { name:"Russia", pop:144, prev:44, awareness:55, treatment:40, control:15, costPP:300, medCost:80, gdp:12000, wage:8000, workPop:65, daly:400, strokeRate:6, miRate:4, hfRate:5, cagr:1.5, popGr:-0.3, costInfl:10.0, strokeCost:5000, miCost:4000, hfCost:2000 },
+  ID: { name:"Indonesia", pop:278, prev:37, awareness:25, treatment:12, control:5, costPP:30, medCost:8, gdp:4800, wage:3200, workPop:68, daly:350, strokeRate:6, miRate:3, hfRate:4, cagr:2.0, popGr:0.8, costInfl:12.3, strokeCost:2500, miCost:2000, hfCost:1000 },
+  CA: { name:"Canada", pop:40, prev:22, awareness:78, treatment:74, control:60, costPP:3000, medCost:300, gdp:54000, wage:45000, workPop:66, daly:80, strokeRate:2, miRate:2, hfRate:2, cagr:0.8, popGr:0.8, costInfl:8.7, strokeCost:40000, miCost:30000, hfCost:15000 },
+  KR: { name:"South Korea", pop:52, prev:28, awareness:75, treatment:74, control:59, costPP:2200, medCost:280, gdp:33000, wage:28000, workPop:72, daly:100, strokeRate:3, miRate:2, hfRate:3, cagr:0.8, popGr:-0.2, costInfl:12.3, strokeCost:15000, miCost:12000, hfCost:6000 },
+};
+
+let charts = {};
+let activeScenarios = { optimistic: true, baseline: true, pessimistic: true };
+
+function toggleTheme() {
+  const isLight = document.getElementById('themeToggle').checked;
+  document.documentElement.setAttribute('data-theme', isLight ? 'light' : 'dark');
+  document.getElementById('themeLabel').textContent = isLight ? 'Dark' : 'Light';
+  updateChartColors(isLight);
+}
+function updateChartColors(isLight) {
+  const textColor = isLight ? '#475569' : '#8899b0';
+  const gridColor = isLight ? 'rgba(148,163,184,0.25)' : 'rgba(42,58,82,0.4)';
+  const tickColor = isLight ? '#64748b' : '#5a6d85';
+  chartDefaults.plugins.legend.labels.color = textColor;
+  chartDefaults.scales.x.ticks.color = tickColor;
+  chartDefaults.scales.x.grid.color = gridColor;
+  chartDefaults.scales.y.ticks.color = tickColor;
+  chartDefaults.scales.y.grid.color = gridColor;
+  recalc();
+}
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  if (btn) btn.classList.add('active');
+  setTimeout(() => { Object.values(charts).forEach(c => { if(c) c.resize(); }); }, 50);
+}
+
+function loadCountry() {
+  const code = document.getElementById('countrySelect').value;
+  if (code === 'custom') return;
+  const c = COUNTRIES[code];
+  document.getElementById('population').value = c.pop;
+  document.getElementById('prevalence').value = c.prev;
+  document.getElementById('awareness').value = c.awareness;
+  document.getElementById('treatment').value = c.treatment;
+  document.getElementById('control').value = c.control;
+  document.getElementById('directCost').value = c.costPP;
+  document.getElementById('medCost').value = c.medCost;
+  document.getElementById('gdpPerCapita').value = c.gdp;
+  document.getElementById('avgWage').value = c.wage;
+  document.getElementById('workingAgePct').value = c.workPop;
+  document.getElementById('strokeRate').value = c.strokeRate;
+  document.getElementById('strokeRateVal').textContent = c.strokeRate;
+  document.getElementById('miRate').value = c.miRate;
+  document.getElementById('miRateVal').textContent = c.miRate;
+  document.getElementById('hfRate').value = c.hfRate;
+  document.getElementById('hfRateVal').textContent = c.hfRate;
+  document.getElementById('cagr').value = c.cagr;
+  document.getElementById('cagrVal').textContent = c.cagr;
+  document.getElementById('popGrowth').value = c.popGr;
+  document.getElementById('popGrowthVal').textContent = c.popGr;
+  document.getElementById('costInfl').value = c.costInfl;
+  document.getElementById('costInflVal').textContent = c.costInfl;
+  recalc();
+}
+
+function fmt(n, dec=1) {
+  if (n >= 1e12) return (n/1e12).toFixed(dec) + 'T';
+  if (n >= 1e9) return (n/1e9).toFixed(dec) + 'B';
+  if (n >= 1e6) return (n/1e6).toFixed(dec) + 'M';
+  if (n >= 1e3) return (n/1e3).toFixed(dec) + 'K';
+  return n.toFixed(dec);
+}
+
+function recalc() {
+  const pop = parseFloat(document.getElementById('population').value) * 1e6;
+  const prev = parseFloat(document.getElementById('prevalence').value) / 100;
+  const awareness = parseFloat(document.getElementById('awareness').value) / 100;
+  const treatment = parseFloat(document.getElementById('treatment').value) / 100;
+  const control = parseFloat(document.getElementById('control').value) / 100;
+  const costPP = parseFloat(document.getElementById('directCost').value);
+  const medCost = parseFloat(document.getElementById('medCost').value);
+  const gdp = parseFloat(document.getElementById('gdpPerCapita').value);
+  const wage = parseFloat(document.getElementById('avgWage').value);
+  const workPop = parseFloat(document.getElementById('workingAgePct').value) / 100;
+  const strokeRate = parseFloat(document.getElementById('strokeRate').value) / 1000;
+  const miRate = parseFloat(document.getElementById('miRate').value) / 1000;
+  const hfRate = parseFloat(document.getElementById('hfRate').value) / 1000;
+
+  const code = document.getElementById('countrySelect').value;
+  const c = (code !== 'custom' && COUNTRIES[code]) ? COUNTRIES[code] : { strokeCost:10000, miCost:8000, hfCost:5000, daly:300 };
+
+  const htnPop = pop * prev;
+  const unaware = htnPop * (1 - awareness);
+  const treated = htnPop * awareness * treatment;
+  const controlled = treated * control;
+
+  // Direct costs
+  const managementCost = treated * (costPP + medCost);
+  const strokes = htnPop * strokeRate;
+  const mis = htnPop * miRate;
+  const hfs = htnPop * hfRate;
+  const strokeTotalCost = strokes * c.strokeCost;
+  const miTotalCost = mis * c.miCost;
+  const hfTotalCost = hfs * c.hfCost;
+  const compCost = strokeTotalCost + miTotalCost + hfTotalCost;
+  const totalDirect = managementCost + compCost;
+
+  // Indirect
+  const workingHTN = htnPop * workPop;
+  const absentDays = workingHTN * 1.3;
+  const absentCost = absentDays * (wage / 250);
+  const presentCost = workingHTN * 0.02 * wage;
+  const particLoss = workingHTN * 0.02;
+  const particCost = particLoss * wage;
+  const totalIndirect = absentCost + presentCost + particCost;
+
+  const totalCost = totalDirect + totalIndirect;
+  const dalyRate = c.daly;
+  const totalDalys = (pop / 100000) * dalyRate;
+
+  // Dashboard
+  document.getElementById('statPop').textContent = fmt(htnPop);
+  document.getElementById('statPopSub').textContent = (prev*100).toFixed(0) + '% prevalence';
+  document.getElementById('statUnaware').textContent = fmt(unaware);
+  document.getElementById('statUnawareSub').textContent = ((1-awareness)*100).toFixed(0) + '% unaware';
+  document.getElementById('statCost').textContent = '$' + fmt(totalCost);
+  document.getElementById('statCostSub').textContent = 'Direct $' + fmt(totalDirect) + ' + Indirect $' + fmt(totalIndirect);
+  document.getElementById('statDaly').textContent = fmt(totalDalys);
+  document.getElementById('statControlled').textContent = fmt(controlled);
+  document.getElementById('statControlledSub').textContent = (controlled/htnPop*100).toFixed(1) + '% of all HTN patients';
+  document.getElementById('statCV').textContent = fmt(strokes + mis + hfs);
+  document.getElementById('statWork').textContent = '$' + fmt(totalIndirect);
+
+  const gdpImpact = totalCost / (pop * gdp) * 100;
+  document.getElementById('wfGdp').textContent = gdpImpact.toFixed(2) + '%';
+
+  // Cost-effectiveness
+  const costPerDaly = medCost > 0 ? medCost : 100;
+  document.getElementById('econCostEffective').textContent = '~$' + costPerDaly.toFixed(0) + '/DALY';
+
+  // Burden bar
+  const segments = [
+    { label: 'Management (treated)', val: managementCost, color: '#f87171' },
+    { label: 'Stroke events', val: strokeTotalCost, color: '#fb923c' },
+    { label: 'MI events', val: miTotalCost, color: '#fbbf24' },
+    { label: 'Heart failure', val: hfTotalCost, color: '#818cf8' },
+    { label: 'Absenteeism', val: absentCost, color: '#38bdf8' },
+    { label: 'Presenteeism', val: presentCost, color: '#34d399' },
+    { label: 'Reduced participation', val: particCost, color: '#f472b6' },
+  ];
+  document.getElementById('burdenBar').innerHTML = segments.map(s => {
+    const pct = (s.val / totalCost * 100);
+    return `<div style="width:${pct}%; background:${s.color}" title="${s.label}: $${fmt(s.val)} (${pct.toFixed(1)}%)">${pct > 8 ? pct.toFixed(0)+'%' : ''}</div>`;
+  }).join('');
+  document.getElementById('burdenLegend').innerHTML = segments.map(s =>
+    `<div class="burden-legend-item"><div class="swatch" style="background:${s.color}"></div>${s.label}: $${fmt(s.val)}</div>`
+  ).join('');
+
+  updateCostBreakdownChart(segments);
+  document.getElementById('econDirect').textContent = '$' + fmt(totalDirect);
+  document.getElementById('econIndirect').textContent = '$' + fmt(totalIndirect);
+  updateEconCharts(totalDirect, totalIndirect, c, htnPop, awareness, treatment, control);
+  updateWorkforceCharts(absentCost, presentCost, particCost, totalDalys);
+  recalcProjections();
+  updateCountryTab();
+}
+
+function destroyChart(key) { if (charts[key]) { charts[key].destroy(); charts[key] = null; } }
+let chartDefaults = {
+  responsive: true, maintainAspectRatio: false,
+  plugins: { legend: { labels: { color: '#8899b0', font: { family: "'DM Sans'" }, boxWidth: 12, padding: 12 } } },
+  scales: { x: { ticks: { color: '#5a6d85', font: { family: "'DM Sans'", size: 11 } }, grid: { color: 'rgba(42,58,82,0.4)' } },
+            y: { ticks: { color: '#5a6d85', font: { family: "'DM Sans'", size: 11 } }, grid: { color: 'rgba(42,58,82,0.4)' } } }
+};
+
+function updateCostBreakdownChart(segments) {
+  destroyChart('costBreakdown');
+  charts.costBreakdown = new Chart(document.getElementById('costBreakdownChart'), {
+    type: 'doughnut',
+    data: { labels: segments.map(s => s.label), datasets: [{ data: segments.map(s => s.val), backgroundColor: segments.map(s => s.color), borderWidth: 0 }] },
+    options: { responsive: true, maintainAspectRatio: false, cutout: '65%',
+      plugins: { legend: { position: 'right', labels: { color: '#8899b0', font: { family: "'DM Sans'", size: 11 }, boxWidth: 10, padding: 8 } } } }
+  });
+}
+
+function updateEconCharts(directTotal, indirectTotal, c, htnPop, awareness, treatment, control) {
+  destroyChart('econPie');
+  charts.econPie = new Chart(document.getElementById('econPieChart'), {
+    type: 'pie',
+    data: { labels: ['Management & Medication', 'Complication Events', 'Indirect (Productivity)'],
+      datasets: [{ data: [directTotal * 0.4, directTotal * 0.6, indirectTotal], backgroundColor: ['#f87171', '#fb923c', '#38bdf8'], borderWidth: 0 }] },
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { color: '#8899b0', font: { family: "'DM Sans'" }, boxWidth: 10, padding: 12 } } } }
+  });
+
+  const comps = [
+    { name: 'Stroke\n(acute)', val: c.strokeCost, color: '#f87171' },
+    { name: 'Stroke\n(1yr follow-up)', val: c.strokeCost * 0.25, color: '#fb923c' },
+    { name: 'MI\n(acute)', val: c.miCost, color: '#fbbf24' },
+    { name: 'Heart Failure\n(acute)', val: c.hfCost, color: '#818cf8' },
+    { name: 'Heart Failure\n(annual mgmt)', val: c.hfCost * 1.5, color: '#38bdf8' },
+  ];
+  destroyChart('comp');
+  charts.comp = new Chart(document.getElementById('compChart'), {
+    type: 'bar',
+    data: { labels: comps.map(c => c.name), datasets: [{ data: comps.map(c => c.val), backgroundColor: comps.map(c => c.color), borderWidth: 0, borderRadius: 6 }] },
+    options: { ...chartDefaults, plugins: { ...chartDefaults.plugins, legend: { display: false } },
+      scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, title: { display: true, text: 'Cost (USD)', color: '#5a6d85' } } } }
+  });
+
+  // Cascade
+  const cascadeData = [
+    htnPop / 1e6,
+    htnPop * awareness / 1e6,
+    htnPop * awareness * treatment / 1e6,
+    htnPop * awareness * treatment * control / 1e6,
+  ];
+  destroyChart('cascade');
+  charts.cascade = new Chart(document.getElementById('cascadeChart'), {
+    type: 'bar',
+    data: { labels: ['Total HTN', 'Aware', 'Treated', 'Controlled'],
+      datasets: [{ data: cascadeData, backgroundColor: ['#f87171', '#fb923c', '#fbbf24', '#34d399'], borderWidth: 0, borderRadius: 6 }] },
+    options: { ...chartDefaults, plugins: { ...chartDefaults.plugins, legend: { display: false } },
+      scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, title: { display: true, text: 'Population (millions)', color: '#5a6d85' } } } }
+  });
+}
+
+function updateWorkforceCharts(absent, present, partic, dalys) {
+  destroyChart('workforce');
+  charts.workforce = new Chart(document.getElementById('workforceChart'), {
+    type: 'bar',
+    data: { labels: ['Absenteeism', 'Presenteeism', 'Reduced\nParticipation'],
+      datasets: [{ data: [absent, present, partic], backgroundColor: ['#fbbf24', '#fb923c', '#f87171'], borderWidth: 0, borderRadius: 6 }] },
+    options: { ...chartDefaults, plugins: { ...chartDefaults.plugins, legend: { display: false } },
+      scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, title: { display: true, text: 'Annual cost (USD)', color: '#5a6d85' } } } }
+  });
+
+  const yll = dalys * 0.65, yldUnctrl = dalys * 0.25, yldCtrl = dalys * 0.10;
+  destroyChart('daly');
+  charts.daly = new Chart(document.getElementById('dalyChart'), {
+    type: 'doughnut',
+    data: { labels: ['YLL (Premature CV Death)', 'YLD (Uncontrolled HTN)', 'YLD (Controlled HTN)'],
+      datasets: [{ data: [yll, yldUnctrl, yldCtrl], backgroundColor: ['#f87171', '#fb923c', '#34d399'], borderWidth: 0 }] },
+    options: { responsive: true, maintainAspectRatio: false, cutout: '60%',
+      plugins: { legend: { position: 'bottom', labels: { color: '#8899b0', font: { family: "'DM Sans'" }, boxWidth: 10 } } } }
+  });
+}
+
+function setScenario(sc, el) {
+  activeScenarios[sc] = !activeScenarios[sc];
+  const cls = sc === 'optimistic' ? 'active-opt' : sc === 'baseline' ? 'active-base' : 'active-pess';
+  el.classList.toggle(cls);
+  recalcProjections();
+}
+
+function recalcProjections() {
+  const pop = parseFloat(document.getElementById('population').value) * 1e6;
+  const prev = parseFloat(document.getElementById('prevalence').value) / 100;
+  const costPP = parseFloat(document.getElementById('directCost').value);
+  const cagr = parseFloat(document.getElementById('cagr').value) / 100;
+  const popGr = parseFloat(document.getElementById('popGrowth').value) / 100;
+  const costInfl = parseFloat(document.getElementById('costInfl').value) / 100;
+
+  const scenarios = { optimistic: 0.75, baseline: 1.0, pessimistic: 1.20 };
+  const colors = { optimistic: '#34d399', baseline: '#f87171', pessimistic: '#fb923c' };
+  const years = []; for (let y = 2026; y <= 2056; y++) years.push(y);
+  const datasets = [], costDatasets = [];
+  const projData = {};
+
+  Object.entries(scenarios).forEach(([name, mult]) => {
+    if (!activeScenarios[name]) return;
+    const popData = [], costData = [];
+    years.forEach(y => {
+      const t = y - 2026;
+      const futPop = pop * Math.pow(1 + popGr, t);
+      const futPrev = prev * Math.pow(1 + cagr * mult, t);
+      const cappedPrev = Math.min(futPrev, 0.55);
+      const cases = futPop * cappedPrev;
+      popData.push(cases / 1e6);
+      const futCostPP = costPP * Math.pow(1 + costInfl * 0.5, t);
+      costData.push(cases * futCostPP / 1e9);
+    });
+    projData[name] = { pop: popData, cost: costData };
+    datasets.push({ label: name.charAt(0).toUpperCase() + name.slice(1), data: popData, borderColor: colors[name], backgroundColor: colors[name] + '18', fill: name === 'baseline', tension: 0.3, borderWidth: 2, pointRadius: 0 });
+    costDatasets.push({ label: name.charAt(0).toUpperCase() + name.slice(1), data: costData, borderColor: colors[name], backgroundColor: colors[name] + '18', fill: name === 'baseline', tension: 0.3, borderWidth: 2, pointRadius: 0 });
+  });
+
+  const base = projData.baseline || projData[Object.keys(projData)[0]];
+  if (base) {
+    document.getElementById('proj5yr').textContent = base.pop[5] ? base.pop[5].toFixed(1) + 'M' : '—';
+    document.getElementById('proj5yrCost').textContent = base.cost[5] ? '$' + base.cost[5].toFixed(1) + 'B' : '—';
+    document.getElementById('proj15yr').textContent = base.pop[15] ? base.pop[15].toFixed(1) + 'M' : '—';
+    document.getElementById('proj15yrCost').textContent = base.cost[15] ? '$' + base.cost[15].toFixed(1) + 'B' : '—';
+    document.getElementById('proj30yr').textContent = base.pop[30] ? base.pop[30].toFixed(1) + 'M' : '—';
+    document.getElementById('proj30yrCost').textContent = base.cost[30] ? '$' + base.cost[30].toFixed(1) + 'B' : '—';
+  }
+
+  destroyChart('projection');
+  charts.projection = new Chart(document.getElementById('projectionChart'), { type: 'line', data: { labels: years, datasets }, options: { ...chartDefaults, scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, title: { display: true, text: 'HTN population (millions)', color: '#5a6d85' } } } } });
+  destroyChart('costProjection');
+  charts.costProjection = new Chart(document.getElementById('costProjectionChart'), { type: 'line', data: { labels: years, datasets: costDatasets }, options: { ...chartDefaults, scales: { ...chartDefaults.scales, y: { ...chartDefaults.scales.y, title: { display: true, text: 'Direct cost (USD billions)', color: '#5a6d85' } } } } });
+}
+
+function updateCountryTab() {
+  const entries = Object.entries(COUNTRIES).sort((a,b) => (b[1].pop * b[1].prev/100) - (a[1].pop * a[1].prev/100));
+  document.getElementById('countryTableBody').innerHTML = entries.map(([code, c]) => {
+    const htnPop = c.pop * c.prev / 100;
+    return `<tr><td><strong>${c.name}</strong></td><td class="num">${c.pop}</td><td class="num">${c.prev}%</td><td class="num">${htnPop.toFixed(1)}</td><td class="num">${c.awareness}%</td><td class="num">${c.treatment}%</td><td class="num">${c.control}%</td><td class="num">$${c.costPP.toLocaleString()}</td><td class="num">${c.daly}</td></tr>`;
+  }).join('');
+
+  const top12 = entries.slice(0, 12);
+  destroyChart('countryComp');
+  charts.countryComp = new Chart(document.getElementById('countryCompChart'), {
+    type: 'bar',
+    data: { labels: top12.map(([_, c]) => c.name), datasets: [
+      { label: 'HTN Population (M)', data: top12.map(([_, c]) => c.pop * c.prev / 100), backgroundColor: '#f87171', borderRadius: 4, borderWidth: 0, yAxisID: 'y' },
+      { label: 'Control Rate (%)', data: top12.map(([_, c]) => c.control), backgroundColor: '#34d39980', borderColor: '#34d399', type: 'line', borderWidth: 2, pointRadius: 4, yAxisID: 'y1' },
+    ]},
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#8899b0', font: { family: "'DM Sans'" }, boxWidth: 10 } } },
+      scales: {
+        x: { ticks: { color: '#5a6d85', font: { family: "'DM Sans'", size: 10 }, maxRotation: 45 }, grid: { color: 'rgba(42,58,82,0.3)' } },
+        y: { position: 'left', ticks: { color: '#f87171', font: { family: "'DM Sans'", size: 11 } }, grid: { color: 'rgba(42,58,82,0.3)' }, title: { display: true, text: 'HTN population (M)', color: '#f87171' } },
+        y1: { position: 'right', ticks: { color: '#34d399', font: { family: "'DM Sans'", size: 11 } }, grid: { display: false }, title: { display: true, text: 'Control rate (%)', color: '#34d399' }, max: 100 }
+      }
+    }
+  });
+}
+
+Chart.defaults.font.family = "'DM Sans'";
+loadCountry();
+</script>
+</body>
+</html>

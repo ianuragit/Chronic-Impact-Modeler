@@ -1,0 +1,14 @@
+{
+  "name": "chronic-impact-modeler",
+  "version": "1.0.0",
+  "description": "Global Disease Burden Calculator Hub",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
